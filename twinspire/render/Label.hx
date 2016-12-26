@@ -45,6 +45,10 @@ class Label extends Object
 	* Specifies the number of pixel spacing between each line. Default is 2.
 	*/
 	public var lineSpacing:Int;
+	/**
+	* The width of the object will be reflected by the total width of the text.
+	*/
+	public var autoSize:Bool;
 
 	public function new()
 	{
@@ -55,6 +59,7 @@ class Label extends Object
 		lineSpacing = 2;
 		_lines = [];
 		_previousText = "";
+		autoSize = false;
 
 		maxWidth = 150;
 	}
@@ -73,7 +78,7 @@ class Label extends Object
 			if (_previousText != text)
 			{
 				_lines = [];
-				if (maxWidth > -1)
+				if (maxWidth > -1 && !autoSize)
 					processLines();
 				else
 				{
@@ -107,6 +112,8 @@ class Label extends Object
 				if (i < _lines.length)
 				{
 					g2.drawString(_lines[i], position.x + scenePos.x, position.y + scenePos.y + spaceY);
+					if (autoSize)
+						size.width = font.width(fontSize, _lines[i]);
 				}
 				else
 					break;
