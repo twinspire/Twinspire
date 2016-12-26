@@ -110,8 +110,17 @@ class Main
 		buffer.g2.begin(true, Color.Black);
 		//do rendering
 		game.render(buffer);
+		mainScene.render(buffer.g2, mainScene.position, mainScene.size);
 
 		buffer.g2.end();
 	}
 }
 ```
+
+As you may notice, the `Scene`'s `render` call requires three parameters instead of the one as in the `Game` class. The reason is because object's may optionally be bound by the camera.
+
+Each `Object` has a boolean value `cameraBound` which can be used to determine if it should be bound by the camera. You can use this in derived classes to determine if you want your objects to be moved when the camera is moved.
+
+Using the `position` and `size` passed into the second and third parameters, respectively, you can optionally add these values to the `x` and `y` parameters with Kha's `Framebuffer`.
+
+More documentation will be added later as this project develops.
