@@ -62,6 +62,11 @@ class Scene extends Object
 			else if (e.type != EVENT_MOUSE_WHEEL)
 				_scrollValue = 0;
 		}
+
+		for (obj in objects)
+		{
+			obj.update(e);
+		}
 	}
 
 	public override function render(g2:Graphics, scenePos:Position, sceneSize:Size)

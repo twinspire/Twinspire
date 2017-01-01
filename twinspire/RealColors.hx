@@ -147,4 +147,5 @@ abstract RealColors(Color) from Int from UInt to Int to UInt
 	public static var whiteSmoke:Color = Color.fromValue(0xFFF5F5F5);
 	public static var yellow:Color = Color.fromValue(0xFFFFFF00);
 	public static var yellowGreen:Color = Color.fromValue(0xFF9ACD32);
+
 }

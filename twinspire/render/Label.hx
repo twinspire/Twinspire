@@ -1,9 +1,11 @@
 package twinspire.render;
 
+//import twinspire.render.effects.BitmapFilter;
 import twinspire.geom.Position;
 import twinspire.geom.Size;
 import twinspire.events.Event;
 
+import kha.Image;
 import kha.Color;
 import kha.Font;
 import kha.graphics2.Graphics;
@@ -49,6 +51,26 @@ class Label extends Object
 	* The width of the object will be reflected by the total width of the text.
 	*/
 	public var autoSize:Bool;
+	/**
+	* Determines whether to cast a shadow.
+	*/
+	public var shadow:Bool;
+	/**
+	* The color of the shadow.
+	*/
+	public var shadowColor:UInt;
+	/**
+	* The x position of the shadow from the text.
+	*/
+	public var shadowX:Int;
+	/**
+	* The y position of the shadow from the text.
+	*/
+	public var shadowY:Int;
+	/**
+	* Determines by how much the shadow should blur.
+	*/
+	public var shadowBlurAmount:Int;
 
 	public function new()
 	{
@@ -56,6 +78,11 @@ class Label extends Object
 
 		fontSize = 12;
 		fontColor = Color.White;
+		shadowColor = Color.Black;
+		shadow = false;
+		shadowX = 1;
+		shadowY = 1;
+		shadowBlurAmount = 2;
 		lineSpacing = 2;
 		_lines = [];
 		_previousText = "";
@@ -99,11 +126,45 @@ class Label extends Object
 			
 
 			var lineIndex:Int = 0 + scrollV;
-
+			
 			g2.font = font;
 			g2.fontSize = fontSize;
-			g2.color = fontColor;
 			var fontHeight = font.height(fontSize);
+			if (autoSize)
+				for (i in 0..._lines.length)
+					if (size.width < font.width(fontSize, _lines[i]))
+						size.width = font.width(fontSize, _lines[i]);
+			
+			if (autoSize)
+				size.height = fontHeight;
+
+			if (shadow)
+			{
+				g2.color = shadowColor;
+				g2.font = font;
+				g2.fontSize = fontSize;
+
+				for (i in 0...maxLinesInLabel)
+				{
+					var spaceY = i * fontHeight + lineSpacing * i;
+					if (i == 0)
+						spaceY = 0;
+					if (i < _lines.length)
+					{
+						g2.drawString(_lines[i], position.x + scenePos.x + shadowX, position.y + scenePos.y + spaceY + shadowY);
+					}
+					else
+						break;
+				}
+
+				// if (shadowBlurAmount > 0)
+				// {
+				// 	BitmapFilter.blur(bitmapFilter, shadowBlurAmount);
+				// }
+
+				//g2.drawImage(bitmapFilter, , );
+			}
+
 			for (i in 0...maxLinesInLabel)
 			{
 				var spaceY = i * fontHeight + lineSpacing * i;
@@ -111,9 +172,8 @@ class Label extends Object
 					spaceY = 0;
 				if (i < _lines.length)
 				{
+					g2.color = fontColor;
 					g2.drawString(_lines[i], position.x + scenePos.x, position.y + scenePos.y + spaceY);
-					if (autoSize)
-						size.width = font.width(fontSize, _lines[i]);
 				}
 				else
 					break;
