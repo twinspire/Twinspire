@@ -127,7 +127,6 @@ class Label extends Object
 			
 			if (scrollV < 0)
 				scrollV = 0;
-			
 
 			var lineIndex:Int = 0 + scrollV;
 			
@@ -137,7 +136,7 @@ class Label extends Object
 			
 			size.width = textWidth;
 			size.height = textHeight;
-
+			
 			if (shadow)
 			{
 				g2.color = shadowColor;
@@ -237,7 +236,9 @@ class Label extends Object
 					}
 					else if (currentLineWidth >= maxWidth)
 					{
+						currentWord += char;
 						_lines.push(currentLine);
+						currentLine = "";
 					}
 				}
 			}
@@ -268,9 +269,12 @@ class Label extends Object
 				result = size.width;
 		}			
 
-		for (i in 0..._lines.length)
-			if (result < font.width(fontSize, _lines[i]))
-				result = font.width(fontSize, _lines[i]);
+		if (maxWidth > 0)
+		{
+			for (i in 0..._lines.length)
+				if (result < font.width(fontSize, _lines[i]))
+					result = font.width(fontSize, _lines[i]);
+		}
 		
 		return result;
 	}
