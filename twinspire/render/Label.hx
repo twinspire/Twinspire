@@ -121,7 +121,11 @@ class Label extends Object
 				_previousText = text;
 			}
 			
-			var maxLinesInLabel = Math.ceil(size.height / font.height(fontSize));
+			var heightLimit = _lines.length * font.height(fontSize) + lineSpacing;
+			if (size.height > heightLimit)
+				size.height = heightLimit;
+
+			var maxLinesInLabel = Math.floor(size.height / font.height(fontSize));
 			if (scrollV + maxLinesInLabel > _lines.length)
 				scrollV = _lines.length - maxLinesInLabel;
 			
@@ -135,7 +139,6 @@ class Label extends Object
 			var fontHeight = font.height(fontSize);
 			
 			size.width = textWidth;
-			size.height = textHeight;
 			
 			if (shadow)
 			{
