@@ -8,6 +8,7 @@ import twinspire.RealColors;
 
 using twinspire.events.EventType;
 using twinspire.render.gui.GraphicsType;
+using twinspire.geom.Alignment;
 
 import kha.graphics2.Graphics in KhaGraphics;
 import kha.Font;
@@ -37,6 +38,12 @@ class Button extends Object implements IGUI
 		super();
 
 		_lblMain = new Label();
+		_lblMain.autoSize = true;
+		_lblMain.shadow = true;
+		_lblMain.alignTo = this;
+		_lblMain.alignment = ALIGN_CENTER;
+
+		padding = 6;
 
 		this.text = text;
 
@@ -70,6 +77,9 @@ class Button extends Object implements IGUI
 		var x = position.x + scenePos.x;
 		var y = position.y + scenePos.y;
 		var g = _graphics;
+
+		size.width = _lblMain.textWidth + padding * 2;
+		size.height = _lblMain.textHeight + padding * 2;
 
 		if (GraphicsCls.checkColorValid(g) && _graphicsType == GRAPHICS_SIMPLE)
 		{
@@ -162,6 +172,16 @@ class Button extends Object implements IGUI
 			
 			g2.drawScaledSubImage(g.bitmap_source, rect.x, rect.y, rect.width, rect.height, x, y, size.width, size.height);
 		}
+
+		if (_mouseDown && (_graphicsType == GRAPHICS_3D || (_graphicsType == GRAPHICS_BITMAP && g.text_3d_effect != null)))
+		{
+			if (g.text_3d_effect)
+				_lblMain.render(g2, new Position(scenePos.x + 1, scenePos.y + 1), sceneSize);
+			else
+				_lblMain.render(g2, scenePos, sceneSize);
+		}
+		else
+			_lblMain.render(g2, scenePos, sceneSize);
 	}
 
 

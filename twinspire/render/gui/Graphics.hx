@@ -17,6 +17,7 @@ typedef Graphics =
 	@:optional var color_shadow_over:UInt;
 	@:optional var color_shadow_down:UInt;
 	@:optional var bitmap_source:Image;
+	@:optional var text_3d_effect:Bool;
 	@:optional var bitmap_base_rect:Rect;
 	@:optional var bitmap_over_rect:Rect;
 	@:optional var bitmap_down_rect:Rect;

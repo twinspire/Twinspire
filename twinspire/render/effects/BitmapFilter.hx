@@ -11,8 +11,8 @@ class BitmapFilter
 	{
 		var m = new ConversionMatrix();
 		m.setAll(1);
-    	m.pixel = weight;
-    	m.factor = weight + 8;
+		m.pixel = weight;
+		m.factor = weight + 8;
 
 		return filter(b, m);
 	}

@@ -13,4 +13,5 @@ abstract Alignment(Int) from Int to Int
 	var ALIGN_INNER_RIGHT	=	6;
 	var ALIGN_INNER_BOTTOM	=	7;
 	var ALIGN_BOTTOM_RIGHT	=	8;
+	var ALIGN_CENTER		=	9;
 }

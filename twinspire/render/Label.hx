@@ -72,6 +72,10 @@ class Label extends Object
 	*/
 	public var shadowBlurAmount:Int;
 
+	public var textWidth(get, never):Float;
+
+	public var textHeight(get, never):Float;
+
 	public function new()
 	{
 		super();
@@ -130,13 +134,9 @@ class Label extends Object
 			g2.font = font;
 			g2.fontSize = fontSize;
 			var fontHeight = font.height(fontSize);
-			if (autoSize)
-				for (i in 0..._lines.length)
-					if (size.width < font.width(fontSize, _lines[i]))
-						size.width = font.width(fontSize, _lines[i]);
 			
-			if (autoSize)
-				size.height = fontHeight;
+			size.width = textWidth;
+			size.height = textHeight;
 
 			if (shadow)
 			{
@@ -248,6 +248,38 @@ class Label extends Object
 			if (currentLine != "")
 				_lines.push(currentLine);
 		}
+	}
+
+	private function get_textWidth()
+	{
+		var result:Float = 0;
+		if (autoSize)
+		{
+			var _text = text;
+			_text = text.replace("\r", "");
+			_text = text.replace("\n", "");
+			_lines.push(_text);
+		}
+		else
+			processLines();
+
+		for (i in 0..._lines.length)
+			if (result < font.width(fontSize, _lines[i]))
+				result = font.width(fontSize, _lines[i]);
+		
+		return result;
+	}
+
+	private function get_textHeight()
+	{
+		var result:Float = 0;
+
+		if (autoSize)
+			result = font.height(fontSize);
+		else
+			result = size.height;
+
+		return result;
 	}
 
 }

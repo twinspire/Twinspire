@@ -213,6 +213,18 @@ class Object
 						position.y = (System.windowHeight() - size.height - padding);
 						cameraBound = false;
 					}
+				case ALIGN_CENTER:
+					if (alignTo != null)
+					{
+						position.x = ((alignTo.size.width - size.width) / 2) + alignTo.position.x;
+						position.y = ((alignTo.size.height - size.height) / 2) + alignTo.position.y;						 
+					}
+					else
+					{
+						position.x = ((System.windowWidth() - size.width) / 2);
+						position.y = ((System.windowHeight() - size.height) / 2);
+						cameraBound = false;
+					}
 				case ALIGN_NONE:
 
 			}
