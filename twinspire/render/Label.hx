@@ -261,7 +261,12 @@ class Label extends Object
 			_lines.push(_text);
 		}
 		else
-			processLines();
+		{
+			if (maxWidth > 0)
+				processLines();
+			else
+				result = size.width;
+		}			
 
 		for (i in 0..._lines.length)
 			if (result < font.width(fontSize, _lines[i]))
