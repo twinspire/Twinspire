@@ -52,8 +52,7 @@ class TextField extends Object implements IGUI
 	private var _capsLock:Bool;
 	private var _previousAction:Key;
 	private var _currentAction:Key;
-	private var _currentActionValue:Array<String>;
-	private var _keyIsDown:Bool;
+	private var _currentActionValue:String;
 	private var _keyDownValue:String;
 	private var _currentActionDelay:Float;
 	private var _singleKeyPressDelay:Float;
@@ -115,12 +114,10 @@ class TextField extends Object implements IGUI
 		_caretVisible = true;
 		_currentCaretBlinkTime = 0;
 		_currentlyInputting = false;
-		_keyIsDown = false;
 		_inputDelay = 0.5;
 		_initialActionDelay = 1;
-		_singleKeyPressDelay = 0.02;
+		_singleKeyPressDelay = 0.01;
 		_subsequentActionDelay = 0.05;
-		_currentActionValue = [];
 
 		_minWidth = 30;
 
@@ -152,8 +149,7 @@ class TextField extends Object implements IGUI
 				
 				if (e.char != String.fromCharCode(0x000014))
 				{
-					_currentActionValue.push(e.char);
-					_keyIsDown = true;
+					_currentActionValue += e.char;
 					_capsLock = false;
 				}
 			}
@@ -169,7 +165,7 @@ class TextField extends Object implements IGUI
 			{
 				if (e.char != String.fromCharCode(0x000014))
 				{
-					_currentActionValue.push(e.char);
+					_currentActionValue += e.char;
 					_capsLock = false;
 				}
 			}
@@ -183,7 +179,6 @@ class TextField extends Object implements IGUI
 			_startInputDelay = true;
 			_passedInitialAction = false;
 			_currentAction = null;
-			_keyIsDown = false;
 		}
 	}
 
@@ -242,7 +237,6 @@ class TextField extends Object implements IGUI
 				{
 					if (debugInfo) trace("Action passed subsequent action delay.");
 					_currentActionDelay = 0;
-					removeCharacterDuplicates();
 					processAction();
 				}
 			}
@@ -255,7 +249,6 @@ class TextField extends Object implements IGUI
 				if (debugInfo) trace("Key pressed.");
 				_currentActionDelay = 0;
 				_doKeyPress = false;
-				removeCharacterDuplicates();
 				processAction(_previousAction);
 				_previousAction = null;
 			}
@@ -273,7 +266,7 @@ class TextField extends Object implements IGUI
 		
 		if (text != null)
 		{
-			g2.drawString(text, position.x + scenePos.x, position.y + scenePos.y);
+			g2.drawString(text, position.x, position.y);
 
 			if (_caretIndex > -1 && _hasFocus && _hasInput && _caretVisible)
 			{
@@ -289,54 +282,25 @@ class TextField extends Object implements IGUI
 				else
 					g2.color = Color.Black;
 				
-				g2.drawLine(position.x + scenePos.x + subTextLength, position.y + scenePos.y, position.x + scenePos.x + subTextLength, position.y + scenePos.y + textHeight);
+				g2.drawLine(position.x + subTextLength, position.y, position.x + subTextLength, position.y + textHeight);
 			}
 		}
 
-		if (!_keyIsDown)
-			_currentActionValue = [];
+		_currentActionValue = "";
 		_lastTime = System.time;
-	} //render
-
-	private function removeCharacterDuplicates()
-	{
-		var currentChar:String = "";
-		var newArray = _currentActionValue.copy();
-		var indicesRemoved = new Array<Int>();
-		for (i in 0...newArray.length)
-		{
-			if (i == 0)
-			{
-				currentChar = newArray[i];
-			}
-			else if (newArray[i] == currentChar)
-			{
-				indicesRemoved.push(i);
-				if (debugInfo) trace("To be removed: " + newArray[i]);
-				currentChar = newArray[i];
-			}
-		}
-
-		for (i in indicesRemoved)
-		{
-			_currentActionValue.splice(i, 1);
-		}
-	}
+	} //render 
 
 	private function processAction(?action:Key = null)
 	{
 		if (action == null)
 			action = _currentAction;
 		
-		if (debugInfo) trace("Number of characters to input: " + _currentActionValue.length);
-
 		switch(action)
 		{
 			case CHAR:
 				if (!_capsLock)
 				{
-					for (char in _currentActionValue)
-						insertCharacter(char);
+					insertCharacter(_currentActionValue);
 				}
 			case ALT:
 			case BACK:
