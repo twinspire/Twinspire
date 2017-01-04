@@ -6,11 +6,17 @@ The following features include:
  * Game and Scene management
  * Event handling
  * Text, Bitmap, TileMaps and Shapes
+ * Some simple GUI components
 
 ## Installation
 There is currently no Haxe repository despite a `haxelib.json` file exists. Instead, you should clone this repository on your computer and make it a haxelib dev directory.
 
     haxelib git twinspire https://github.com/twinspire/Twinspire.git
+
+## Community and Support
+If you find a bug or an issue, please use the issue tracker here.
+
+You can also find and discuss information, updates and features on our [community forums](http://community.colour-id.co.uk/).
 
 ## Roadmap
 There are many ideas that I intend to implement into this game engine, including an integrated editor. But this will all depend on how this project shapes as I continue progress.
