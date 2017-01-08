@@ -45,6 +45,12 @@ class Scene extends Object
 		scrollEnabled = false;
 	}
 
+	public function addObject(obj:Object)
+	{
+		obj.parent = this;
+		objects.push(obj);
+	}
+
 	public override function update(e:Event)
 	{
 		if (e.type == EVENT_MOUSE_MOVE)

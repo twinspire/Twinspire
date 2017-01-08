@@ -33,4 +33,16 @@ class GraphicsCls
 		return result;
 	}
 
+	public static function checkTickValid(g:Graphics):Bool
+	{
+		var result = (g.tick_base != null && g.tick_over != null && g.tick_down != null);
+		return result;
+	}
+
+	public static function checkTickCompactValid(g:Graphics):Bool
+	{
+		var result = (g.tick_base_rect != null && g.tick_over_rect != null && g.tick_down_rect != null);
+		return result;
+	}
+
 }

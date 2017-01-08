@@ -24,4 +24,10 @@ typedef Graphics =
 	@:optional var bitmap_base:Image;
 	@:optional var bitmap_over:Image;
 	@:optional var bitmap_down:Image;
+	@:optional var tick_base:Image;
+	@:optional var tick_over:Image;
+	@:optional var tick_down:Image;
+	@:optional var tick_base_rect:Rect;
+	@:optional var tick_over_rect:Rect;
+	@:optional var tick_down_rect:Rect;
 }
