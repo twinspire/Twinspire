@@ -37,18 +37,21 @@ To initialise a project using the `Game` class, this is how you do so:
 ```haxe
 package;
 
+import twinspire.RealColors;
 import twinspire.Game;
-import kha.Color;
+
+import kha.math.FastVector2 in FV2;
 import kha.Framebuffer;
 import kha.System;
 
-class Main
+class Main 
 {
-	static var game:Game;
 
+	static var game:Game;
+	
 	public static function main()
 	{
-		Game.create({title: "My Project", width: 1024, height: 768}, function(g:Game)
+		Game.create({ title: "New Project", width: 1024, height: 768}, function(g:Game)
 		{
 			game = g;
 
@@ -58,49 +61,47 @@ class Main
 
 	static function render(buffer:Framebuffer)
 	{
-		while (game.pollEvent())
-		{
-			//do event handling
-		}
+		if (!game.hasInited())
+			game.init(buffer);
 
-		buffer.g2.begin(true, Color.Black);
-		//do rendering
-		game.render(buffer);
+		buffer.g2.begin(true, RealColors.cornflowerBlue);
+
+		game.renderCurrent(new FV2(0, 0), new FV2(cast System.windowWidth(), cast System.windowHeight()));
 
 		buffer.g2.end();
 	}
+
 }
 ```
 
 As you can see, there is little difference between the `Game` class and kha in terms of initialisation. Generally speaking, you would initialise scenes inside the callback function before calling `System.notifyOnRender`.
 
-Inside our `render` function, we have the `while` block which checks for events. Normally, in APIs such as SDL, you would declare an event struct and use that as a reference inside the poll event function. Unfortunately, on targets such as JavaScript, it is not possible to use parameters as references. Instead, the currently polled event is stored in a variable inside the `Game` class, called `currentEvent`.
+Inside our `render` function, we check to see if the game needs initialising. Here, we use the call to `game.init` to pass a reference of our buffer so that the game instance can start drawing.
+
+We also have the `while` block which checks for events. Normally, in APIs such as SDL, you would declare an event struct and use that as a reference inside the poll event function. Unfortunately, on targets such as JavaScript, it is not possible to use parameters as references. Instead, the currently polled event is stored in a variable inside the `Game` class, called `currentEvent`.
 
 To use this event, we would pass `game.currentEvent` as below:
 
 ```haxe
 package;
 
+import twinspire.RealColors;
 import twinspire.Game;
-import twinspire.render.Scene;
-import kha.Color;
+
+import kha.math.FastVector2 in FV2;
 import kha.Framebuffer;
 import kha.System;
 
-class Main
+class Main 
 {
-	static var game:Game;
-	static var mainScene:Scene;
 
+	static var game:Game;
+	
 	public static function main()
 	{
-		Game.create({title: "My Project", width: 1024, height: 768}, function(g:Game)
+		Game.create({ title: "New Project", width: 1024, height: 768}, function(g:Game)
 		{
 			game = g;
-
-			mainScene = new Scene();
-			mainScene.size.width = System.windowWidth();
-			mainScene.size.height = System.windowHeight();
 
 			System.notifyOnRender(render);
 		});
@@ -108,25 +109,22 @@ class Main
 
 	static function render(buffer:Framebuffer)
 	{
+		if (!game.hasInited())
+			game.init(buffer);
+		
 		while (game.pollEvent())
 		{
-			mainScene.update(game.currentEvent);
+			//Handle events
 		}
 
-		buffer.g2.begin(true, Color.Black);
-		//do rendering
-		game.render(buffer);
-		mainScene.render(buffer.g2, mainScene.position, mainScene.size);
+		buffer.g2.begin(true, RealColors.cornflowerBlue);
+
+		game.renderCurrent(new FV2(0, 0), new FV2(cast System.windowWidth(), cast System.windowHeight()));
 
 		buffer.g2.end();
 	}
+
 }
 ```
 
-As you may notice, the `Scene`'s `render` call requires three parameters instead of the one as in the `Game` class. The reason is because object's may optionally be bound by the camera.
-
-Each `Object` has a boolean value `cameraBound` which can be used to determine if it should be bound by the camera. You can use this in derived classes to determine if you want your objects to be moved when the camera is moved.
-
-Using the `position` and `size` passed into the second and third parameters, respectively, you can optionally add these values to the `x` and `y` parameters with Kha's `Framebuffer`.
-
-More documentation will be added later as this project develops.
+In version 0.2.0, the concept of scene and object management has been removed in favour of the IMGUI API design concept. This makes it easier to build games in a way that makes sense, and provides a cleaner and robust API to work with.
