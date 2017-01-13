@@ -1,6 +1,6 @@
 package twinspire.render;
 
-import twinspire.geom.Position;
+import kha.math.FastVector2 in FV2;
 
 class Tile
 {
@@ -9,7 +9,7 @@ class Tile
 	public var x:Float;
 	public var y:Float;
 
-	public function new(id:Int, pos:Position)
+	public function new(id:Int, pos:FV2)
 	{
 		this.id = id;
 		this.x = pos.x;

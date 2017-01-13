@@ -17,6 +17,7 @@ class Event
 	public var key:Key;
 	public var char:String;
 
+	public var gamepadId:Int;
 	public var gamepadAxis:Int;
 	public var gamepadAxisValue:Float;
 	public var gamepadButton:Int;

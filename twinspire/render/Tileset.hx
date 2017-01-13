@@ -9,6 +9,7 @@ class Tileset
 
 	public var tilewidth:Float;
 	public var tileheight:Float;
+	public var tilecount:Int;
 	public var bitmap:Image;
 
 	public function new(bitmap:Image, tilewidth:Float, tileheight:Float)
@@ -17,6 +18,8 @@ class Tileset
 
 		this.tilewidth = tilewidth;
 		this.tileheight = tileheight;
+		
+		tilecount = Math.floor(bitmap.realWidth / tilewidth) + Math.floor(bitmap.realHeight / tileheight);
 	}
 
 	public function getSourceImageByIndex(index:Int):Rect

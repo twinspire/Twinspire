@@ -1,32 +1,66 @@
 package twinspire;
 
-import twinspire.render.Scene;
+import twinspire.render.tilemap.tiled.TileMapLayer in TiledLayer;
+import twinspire.render.tilemap.tiled.TileMap in TiledMap;
+import twinspire.render.tilemap.tiled.Tileset in TiledSet;
+import twinspire.render.tilemap.ts.TileMap in TsTileMap;
+import twinspire.render.tilemap.ts.Tileset in TsTileset;
 
 import twinspire.events.Event;
+import twinspire.render.TileMap;
+import twinspire.render.Tileset;
+import twinspire.render.Tile;
+import twinspire.geom.Rect;
 
-import kha.System;
-import kha.Assets;
-import kha.Framebuffer;
-
+import kha.math.FastVector2 in FV2;
+import kha.math.FastVector4 in FV4;
+import kha.math.Vector2 in V2;
+import kha.math.Vector4 in V4;
+import kha.graphics2.Graphics in Graphics2;
 import kha.input.Gamepad;
 import kha.input.Keyboard;
 import kha.input.Mouse;
 import kha.input.Surface;
+import kha.Font;
 import kha.Key;
+import kha.System;
+import kha.Assets;
+import kha.Framebuffer;
+import kha.Image;
+import kha.Blob;
+
+import haxe.Json;
 
 using twinspire.events.EventType;
+using StringTools;
 
 class Game
 {
 
+	private var g2:Graphics2;
 	private var _lastTime:Float;
-	private var _currentScene:Scene;
-	private var _scenes:Array<Scene>;
 	private var _events:Array<Event>;
+	private var _error:String;
 
-	public var deltaTime:Float;
+	private var _padding:Int;
+	private var _dir:String = 'down';
+
+	private var _lastPos:FV2;
+	private var _currentPos:FV2;
+
+	private var _inited:Bool;
+	private var _lines:Array<String>;
+	private var _tileMap:TileMap;
+	private var _showTileMap:Bool;
+
+	/**
+	* Gets the currently polled event.
+	*/
 	public var currentEvent:Event;
 
+	/**
+	* Create a `Game`, initialise the system and load all available assets.
+	*/
 	public static function create(options:SystemOptions, callback:Game -> Void)
 	{
 		System.init(options, function()
@@ -40,42 +74,7 @@ class Game
 
 	public function new()
 	{
-		_lastTime = 0;
-
 		initEvents();
-	}
-
-	public function addScene(s:Scene)
-	{
-		_scenes.push(s);
-	}
-
-	public function switchScene(?index:Int = -1, ?name:String = "")
-	{
-		if (index == -1 && name == "")
-			return;
-		
-		if (index > -1)
-			switchSceneByIndex(index);
-		else if (name != "")
-			switchSceneByName(name);
-	}
-
-	public function switchSceneByIndex(index:Int)
-	{
-		_currentScene = _scenes[index];
-	}
-
-	public function switchSceneByName(name:String)
-	{
-		for (scene in _scenes)
-		{
-			if (scene.name == name)
-			{
-				_currentScene = scene;
-				break;
-			}
-		}
 	}
 
 	private function initEvents()
@@ -104,6 +103,11 @@ class Game
 			Surface.get(0).notify(_surface_onTouchStart, _surface_onTouchEnd, _surface_onTouchMove);
 	}
 
+	/**
+	* Processes all of the events currently waiting in the event queue
+	* until there is none left. This should be called before any rendering
+	* takes place.
+	*/
 	public function pollEvent():Bool
 	{
 		if (_events.length == 0)
@@ -117,14 +121,530 @@ class Game
 		return true;
 	}
 
-	public function render(buffer:Framebuffer)
-	{
-		deltaTime = System.time - _lastTime;
+	/**
+	* Initialisation routines.
+	*/
 
-		if (_currentScene != null)
-			_currentScene.render(buffer.g2, _currentScene.position, _currentScene.size);
+	/**
+	* Initialise the game and reference the buffer.
+	*/
+	public function init(buffer:Framebuffer)
+	{
+		g2 = buffer.g2;
+		_inited = true;	
+	}
+
+	/**
+	* Returns the value detecting if the game has been initialised.
+	*/
+	public function hasInited() return _inited;
+
+	/**
+	* Retrieve the most recent error.
+	*/
+	public function error() return _error;
+
+	/**
+	* Initialise the TileMap. Assumes that you wish the TileMap to be rendered to the game screen.
+	*/
+	public function initTileMap():Void
+	{
+		_tileMap = new TileMap();
+		_showTileMap = true;
+	}
+
+	/**
+	* Initialise a TileMap from the Twinspire JSON file format.
+	*/
+	public function initTileMapFromJson(file:Blob):Bool
+	{
+		var contents = file.toString();
+		var data:TsTileMap = Json.parse(contents);
+
+		_tileMap = new TileMap();
+		for (i in 0...data.tilesets.length)
+		{
+			var set:TsTileset = data.tilesets[i];
+			var csvName = data.layersFromPaths[i];
+			var blob:Blob = Reflect.field(Assets.blobs, csvName);
+			if (blob == null)
+			{
+				throw "Tried to load a blob with the name " + csvName + ".";
+				return false;
+			}
+
+			var img:Image = Reflect.field(Assets.images, set.assetName);
+			if (img == null)
+			{
+				throw "Tried to load an image with the name " + set.assetName + ".";
+				return false;
+			}
+
+			var tileset = new Tileset(img, set.tilewidth, set.tileheight);
+
+			if (!addTileMapLayerFromCSV(blob, tileset))
+			{
+				throw "Loading a TileMap with the resources: " + csvName + " & " + set.assetName + " did not appear to work.";
+				return false;
+			}
+		}
+
+		_showTileMap = true;
+		return true;
+	}
+
+	/**
+	* Add a tile layer from a CSV file with its respective Tileset.
+	*/
+	public function addTileMapLayerFromCSV(file:Blob, set:Tileset):Bool
+	{
+		try
+		{	
+			var contents = file.readUtf8String();
+			var lines = contents.split('\n');
+			var tiles = new Array<Tile>();
+			var x = 0;
+			var y = 0;
+			for (line in lines)
+			{
+				if (line == "")
+					break;
+				x = 0;
+				
+				for (id in line.split(','))
+				{
+					var value:Int = Std.parseInt(id);
+					if (value != null)
+					{
+						tiles.push(new Tile(value, new FV2(set.tilewidth * x, set.tileheight * y)));
+					}
+					x++;
+				}
+				y++;
+			}
+
+			_tileMap.addLayer(tiles, set);
+
+			return true;
+		}
+		catch (msg:String)
+		{
+			_error = msg;
+			return false;
+		}
+	}
+
+	/**
+	* A work-in-progress. Do not use.
+	* Initialise a map from the Tiled Json format.
+	*/
+	public function initMapFromTiledJSON(file:Blob):Bool
+	{
+		try
+		{
+			var contents = file.readUtf8String();
+			var data:TiledMap = Json.parse(contents);
+
+			_tileMap = new TileMap();
+
+			// TODO
+
+			return true;
+		}
+		catch (msg:String)
+		{
+			_error = msg;
+			return false;
+		}
+	}
+
+	/**
+	* Basic drawing routines
+	*/
+
+	/**
+	* Changes the direction of the flow. Acceptable values are: 'left', 'right', 'up', 'down'
+	* Flow automatically determines where the next drawn object should be placed, unless specified.
+	* When position is specified in a drawn object, flow continues from that position.
+	*/
+	public function changeDirection(dir:String)
+	{
+		if (dir != 'left' || dir != 'right' || dir != 'up' || dir != 'down')
+			dir = 'down';
+		else
+			_dir = dir;
+	}
+
+	/**
+	* Draws a bitmap image at the given location, with an optional size and scale9 value.
+	* If size is not given, the bitmap will be drawn at its original size.
+	* If scale9Grid is given, the bitmap will be drawn scaled within those bounds.
+	*/
+	public function bitmap(src:Image, pos:FV2 = null, size:FV2 = null, scale9Grid:Rect = null)
+	{
+		var imageWidth = size != null ? size.x : src.realWidth;
+		var imageHeight = size != null ? size.y : src.realHeight;
+
+		_currentPos = resolvePosition(pos, new FV2(imageWidth, imageHeight));
+
+		if (size != null && scale9Grid == null)
+		{
+			g2.drawScaledImage(src, _currentPos.x, _currentPos.y, size.x, size.y);
+			changeLastPosition(_currentPos, size);
+		}
+		else if (size != null && scale9Grid != null)
+		{
+			var rect = scale9Grid;
+			//don't draw if the scale9grid has a size less than the actual image
+			if (src.realWidth < rect.x + rect.width || src.realWidth < rect.y + rect.height)
+			{
+				g2.drawScaledImage(src, _currentPos.x, _currentPos.y, src.realWidth, src.realHeight);
+				changeLastPosition(_currentPos, new FV2(imageWidth, imageHeight));
+				return;
+			}
+			
+			var clipRightX = rect.x + rect.width;
+			var leftW = rect.x;
+			var rightW = src.realWidth - clipRightX;
+			var centerW = size.x - (leftW + rightW);
+			var clipRightW = rightW;
+			var clipBottomY = rect.y + rect.height;
+			var topH = rect.y;
+			var bottomH = src.realHeight - clipBottomY;
+			var centerH = size.y - (topH + bottomH);
+			var clipBottomH = bottomH;
+
+			if (centerW < 0)
+			{
+				centerW = 0;
+				if (leftW == 0)
+					rightW = rect.width;
+				else if (rightW == 0)
+					leftW = rect.width;
+				else
+				{
+					var ratio = leftW / rightW;
+					rightW = Math.ceil(rect.width / (ratio + 1));
+					leftW = rect.width - rightW;
+				}
+			}
+
+			if (centerH < 0)
+			{
+				centerH = 0;
+				if (topH == 0)
+					bottomH = rect.height;
+				else if (bottomH == 0)
+					topH = rect.height;
+				else
+				{
+					var ratio = topH / bottomH;
+					bottomH = Math.ceil(rect.height / (ratio + 1));
+					topH = rect.height - bottomH;
+				}
+			}
+
+			var centerX = _currentPos.x + leftW;
+			var centerY = _currentPos.y + topH;
+			var rightX = _currentPos.x + leftW + centerW;
+			var bottomY = _currentPos.y + topH + centerH;
+
+			if (leftW > 0)
+			{
+				if (topH > 0)
+					g2.drawScaledSubImage(src, 
+							0, 0, rect.y, rect.y, 
+							_currentPos.x, _currentPos.y, leftW, topH);
+				if (centerH > 0)
+					g2.drawScaledSubImage(src,
+							0, rect.y, rect.x, rect.height,
+							_currentPos.x, centerY, leftW, centerH);
+				if (bottomH > 0)
+					g2.drawScaledSubImage(src,
+							0, clipBottomY, rect.x, clipBottomH,
+							_currentPos.x, bottomY, leftW, bottomH);
+			}
+
+			if (centerW > 0)
+			{
+				if (topH > 0)
+					g2.drawScaledSubImage(src,
+							rect.x, 0, rect.width, rect.y,
+							centerX, _currentPos.y, centerW, topH);
+				if (centerH > 0)
+					g2.drawScaledSubImage(src,
+							rect.x, rect.y, rect.width, rect.height,
+							centerX, centerY, centerW, centerH);
+				if (bottomH > 0)
+					g2.drawScaledSubImage(src,
+							rect.x, clipBottomY, rect.width, clipBottomH,
+							centerX, bottomY, centerW, bottomH);
+			}
+
+			if (rightW > 0)
+			{
+				if (topH > 0)
+					g2.drawScaledSubImage(src,
+							clipRightX, 0, clipRightW, rect.y,
+							rightX, _currentPos.y, rightW, topH);
+				if (centerH > 0)
+					g2.drawScaledSubImage(src,
+							clipRightX, rect.y, clipRightW, rect.height,
+							rightX, centerY, rightW, centerH);
+				if (bottomH > 0)
+					g2.drawScaledSubImage(src,
+							clipRightX, clipBottomY, clipRightW, clipBottomH,
+							rightX, bottomY, rightW, bottomH);
+			}
+
+			changeLastPosition(_currentPos, size);
+		}
+		else
+		{
+			g2.drawScaledImage(src, _currentPos.x, _currentPos.y, src.realWidth, src.realHeight);
+			changeLastPosition(_currentPos, new FV2(imageWidth, imageHeight));
+		}
+	}
+
+	/**
+	* Draw a label with the given font, size and colour.
+	*/
+	public function label(text:String, font:Font, fontSize:Int, pos:FV2 = null, size:FV2 = null, fontColor:UInt = 0xFFFFFFFF, shadow:Bool = false, shadowX:Int = 1, shadowY:Int = 1, shadowColor:UInt = 0xFF000000)
+	{
+		_currentPos = resolvePosition(pos, size);
+
+		var lineIndex:Int = 0;
 		
-		_lastTime = System.time;
+		g2.font = font;
+		g2.fontSize = fontSize;
+		var fontHeight = font.height(fontSize);
+		
+		if (shadow)
+		{
+			g2.color = shadowColor;
+			g2.font = font;
+			g2.fontSize = fontSize;
+			g2.drawString(text, _currentPos.x + shadowX, _currentPos.y + shadowY);
+
+			// if (shadowBlurAmount > 0)
+			// {
+			// 	BitmapFilter.blur(bitmapFilter, shadowBlurAmount);
+			// }
+
+			//g2.drawImage(bitmapFilter, , );
+		}
+
+		g2.color = fontColor;
+		g2.drawString(text, _currentPos.x, _currentPos.y);
+
+		changeLastPosition(_currentPos, size);
+	}
+
+	/**
+	* Draw a multiline label with the given font, size and colour.
+	*/
+	public function multilineLabel(text:String, font:Font, fontSize:Int, pos:FV2 = null, size:FV2 = null, fontColor:UInt = 0xFFFFFFFF, maxWidth:Float = 150, shadow:Bool = false, shadowX:Int = 1, shadowY:Int = 1, shadowColor:UInt = 0xFF000000, lineSpacing:Int = 1)
+	{
+		_currentPos = resolvePosition(pos, size);
+
+		var maxWidth:Float = size.x;
+		_lines = [];
+		if (maxWidth > -1)
+			processLines(text, font, fontSize, maxWidth);
+		else
+		{
+			var _text = text;
+			_text = text.replace("\r", "");
+			_text = text.replace("\n", "");
+			_lines.push(_text);
+		}
+		
+		var heightLimit = _lines.length * font.height(fontSize) + lineSpacing;
+		if (size.y > heightLimit)
+			size.y = heightLimit;
+
+		var maxLinesInLabel = Math.floor(size.y / font.height(fontSize));
+
+		var lineIndex:Int = 0;
+		
+		g2.font = font;
+		g2.fontSize = fontSize;
+		var fontHeight = font.height(fontSize);
+		
+		if (shadow)
+		{
+			g2.color = shadowColor;
+			g2.font = font;
+			g2.fontSize = fontSize;
+
+			for (i in 0...maxLinesInLabel)
+			{
+				var spaceY = i * fontHeight + lineSpacing * i;
+				if (i == 0)
+					spaceY = 0;
+				if (i < _lines.length)
+				{
+					g2.drawString(_lines[i], _currentPos.x + shadowX, _currentPos.y + spaceY + shadowY);
+				}
+				else
+					break;
+			}
+
+			// if (shadowBlurAmount > 0)
+			// {
+			// 	BitmapFilter.blur(bitmapFilter, shadowBlurAmount);
+			// }
+
+			//g2.drawImage(bitmapFilter, , );
+		}
+
+		for (i in 0...maxLinesInLabel)
+		{
+			var spaceY = i * fontHeight + lineSpacing * i;
+			if (i == 0)
+				spaceY = 0;
+			if (i < _lines.length)
+			{
+				g2.color = fontColor;
+				g2.drawString(_lines[i], _currentPos.x, _currentPos.y + spaceY);
+			}
+			else
+				break;
+		}
+
+		changeLastPosition(_currentPos, size);
+	}
+
+	private function processLines(text:String, font:Font, fontSize:Int, maxWidth:Float)
+	{
+		var lines = text.split('\n');
+		var currentLine = "";
+		var currentWord = "";
+		for (line in lines)
+		{
+			var firstWord = false;
+			for (i in 0...line.length)
+			{
+				var char = line.charAt(i);
+				if (char == "\r")
+				{
+					if (currentWord != "")
+						currentLine += currentWord;
+
+					if (currentLine != "")
+						_lines.push(currentLine);
+					
+					currentLine = "";
+					currentWord = "";
+					_lines.push("\n");
+				}
+				else if (char == " ")
+				{
+					var currentLineWidth = font.width(fontSize, currentLine + " " + currentWord);
+					if (currentLineWidth < maxWidth)
+					{
+						currentLine += currentWord + " ";
+						currentWord = "";
+						continue;
+					}
+					else if (currentLineWidth >= maxWidth)
+					{
+						_lines.push(currentLine);
+						firstWord = true;
+						currentLine = "";
+					}
+				}
+				else
+				{
+					if (firstWord)
+					{
+						currentLine += currentWord + " ";
+						currentWord = "";
+						firstWord = false;
+					}
+
+					var currentLineWidth = font.width(fontSize, currentLine + char);
+					if (currentLineWidth < maxWidth)
+					{
+						currentWord += char;
+						continue;
+					}
+					else if (currentLineWidth >= maxWidth)
+					{
+						currentWord += char;
+						_lines.push(currentLine);
+						currentLine = "";
+					}
+				}
+			}
+
+			if (currentWord != "")
+				currentLine += currentWord;
+
+			if (currentLine != "")
+				_lines.push(currentLine);
+		}
+
+		
+	}
+
+	/**
+	* Renders any present levels to the game screen.
+	*/
+	public function renderCurrent(pos:FV2, size:FV2)
+	{
+		if (_showTileMap)
+		{
+			_tileMap.render(g2, pos, size);
+		}
+	}
+
+
+
+
+
+
+
+	private function resolvePosition(pos:FV2, size:FV2)
+	{
+		var result = new FV2(0, 0);
+		if (pos == null)
+		{
+			if (_currentPos != null && _lastPos != null)
+			{
+				if (_dir == 'left')
+					result = new FV2(_lastPos.x + _padding, _lastPos.y - (size.y / 2));
+				else if (_dir == 'down')
+					result = new FV2(_lastPos.x - (size.x / 2), _lastPos.y + _padding);
+				else if (_dir == 'up')
+					result = new FV2(_lastPos.x - (size.x / 2), _lastPos.y - _padding - size.y);
+				else if (_dir == 'right')
+					result = new FV2(_lastPos.x - _padding - size.x, _lastPos.y - (size.y / 2));
+			}
+			else if (_currentPos != null && _lastPos == null)
+			{
+				result = new FV2(_currentPos.x, _currentPos.y);
+			}
+			else
+			{
+				result = new FV2(_padding, _padding);
+			}
+		}
+		else
+			result = pos;
+		return result;
+	}
+
+	private function changeLastPosition(pos:FV2, size:FV2)
+	{
+		if (_dir == 'left')
+			_lastPos = new FV2(pos.x + size.x, (size.y / 2) + pos.y);
+		else if (_dir == 'down')
+			_lastPos = new FV2((size.x / 2) + pos.x, pos.y + size.y);
+		else if (_dir == 'up')
+			_lastPos = new FV2((size.x / 2) + pos.x, pos.y);
+		else if (_dir == 'right')
+			_lastPos = new FV2(pos.x, (size.y / 2) + pos.y);
 	}
 
 	/**
@@ -192,6 +712,7 @@ class Game
 	{
 		var e = new Event();
 		e.type = EVENT_GAMEPAD_AXIS;
+		e.gamepadId = 0;
 		e.gamepadAxis = axis;
 		e.gamepadAxisValue = value;
 		_events.push(e);
@@ -201,6 +722,7 @@ class Game
 	{
 		var e = new Event();
 		e.type = EVENT_GAMEPAD_BUTTON;
+		e.gamepadId = 0;
 		e.gamepadButton = button;
 		e.gamepadButtonValue = value;
 		_events.push(e);
@@ -210,6 +732,7 @@ class Game
 	{
 		var e = new Event();
 		e.type = EVENT_GAMEPAD_AXIS;
+		e.gamepadId = 1;
 		e.gamepadAxis = axis;
 		e.gamepadAxisValue = value;
 		_events.push(e);
@@ -219,6 +742,7 @@ class Game
 	{
 		var e = new Event();
 		e.type = EVENT_GAMEPAD_BUTTON;
+		e.gamepadId = 1;
 		e.gamepadButton = button;
 		e.gamepadButtonValue = value;
 		_events.push(e);
@@ -228,6 +752,7 @@ class Game
 	{
 		var e = new Event();
 		e.type = EVENT_GAMEPAD_AXIS;
+		e.gamepadId = 2;
 		e.gamepadAxis = axis;
 		e.gamepadAxisValue = value;
 		_events.push(e);
@@ -237,6 +762,7 @@ class Game
 	{
 		var e = new Event();
 		e.type = EVENT_GAMEPAD_BUTTON;
+		e.gamepadId = 2;
 		e.gamepadButton = button;
 		e.gamepadButtonValue = value;
 		_events.push(e);
@@ -246,6 +772,7 @@ class Game
 	{
 		var e = new Event();
 		e.type = EVENT_GAMEPAD_AXIS;
+		e.gamepadId = 3;
 		e.gamepadAxis = axis;
 		e.gamepadAxisValue = value;
 		_events.push(e);
@@ -255,6 +782,7 @@ class Game
 	{
 		var e = new Event();
 		e.type = EVENT_GAMEPAD_BUTTON;
+		e.gamepadId = 3;
 		e.gamepadButton = button;
 		e.gamepadButtonValue = value;
 		_events.push(e);
