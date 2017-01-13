@@ -1,9 +1,6 @@
 {
 	"name": "Twinspire",
 	"description": "A video game engine and utility library for Kha.",
-	"dependencies": {
-		"kha": "git"
-	},
 	"license": "MIT",
 	"releasenote": "Foundations.",
 	"version": "0.2.0-beta",
