@@ -74,7 +74,9 @@ class Main
 }
 ```
 
-As you can see, there is little difference between the `Game` class and kha in terms of initialisation. Generally speaking, you would initialise scenes inside the callback function before calling `System.notifyOnRender`.
+As you can see, there is little difference between the `Game` class and kha in terms of initialisation.
+
+Twinspire now has many `init` function calls inside the game class, such as `initTileMapFromJson` to provide a TileMap instance inside of the Game class itself. This is entirely optional. If you prefer, you can still use your own TileMap or Worlds.
 
 Inside our `render` function, we check to see if the game needs initialising. Here, we use the call to `game.init` to pass a reference of our buffer so that the game instance can start drawing.
 
