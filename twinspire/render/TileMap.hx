@@ -12,6 +12,8 @@ class TileMap
 	private var _indexCount:Int;
 	private var _setMap:Map<Int, Tileset>;
 	private var _setIndices:Array<Int>;
+	private var _tilewidth:Int;
+	private var _tileheight:Int;
 
 	/**
 	* Determines is Tilesets are bound to each individual tile layer, or
@@ -21,12 +23,15 @@ class TileMap
 
 	public var position:FV2;
 
-	public function new()
+	public function new(tilewidth:Int, tileheight:Int)
 	{
 		_setMap = new Map<Int, Tileset>();
 		_tiles = [[]];
 		_setIndices = [];
 		position = new FV2(0, 0);
+
+		_tilewidth = tilewidth;
+		_tileheight = tileheight;
 
 		isLayerRestricted = true;
 
@@ -53,13 +58,22 @@ class TileMap
 		_setMap.set(_indexCount, set);
 	}
 
-	public function render(g2:Graphics, pos:FV2, size:FV2)
+	public function render(g2:Graphics, pos:FV2, size:FV2, zoom:Float = 1.0)
 	{
-		if (size.x > System.windowWidth())
-			size.x = System.windowWidth();
+		var scaleScreen = zoom;
+		if (zoom < 1)
+		{
+			scaleScreen = 1 / zoom;
+		}
 		
-		if (size.y > System.windowHeight())
-			size.y = System.windowHeight();
+		var zoomWidth = ((size.x <= System.windowWidth() ? size.x : System.windowWidth()) * scaleScreen);
+		var zoomHeight = ((size.y <= System.windowHeight() ? size.y : System.windowHeight()) * scaleScreen);
+
+		if (size.x != zoomWidth)
+			size.x = zoomWidth;
+		
+		if (size.y != zoomHeight)
+			size.y = zoomHeight;
 
 		for (i in 0..._tiles.length)
 		{
@@ -72,7 +86,10 @@ class TileMap
 				if (tile.id < 0)
 					continue;
 
-				if ((tile.x + set.tilewidth + position.x >= pos.x && tile.y + set.tileheight + position.y >= pos.y) &&
+				var tileX = Math.floor(tile.x / _tilewidth);
+				var tileY = Math.floor(tile.y / _tileheight);
+
+				if ((tile.x + (_tilewidth * tileX) + position.x >= pos.x && tile.y + (_tileheight * tileY) + position.y >= pos.y) &&
 					(tile.x + position.x < pos.x + size.x && tile.y + position.y < pos.y + size.y))
 				{
 					var rect = new Rect(0, 0, 0, 0);
@@ -91,7 +108,10 @@ class TileMap
 							totalCount += set.tilecount;
 						}
 					}
-					g2.drawSubImage(set.bitmap, tile.x + pos.x, tile.y + pos.y, rect.x, rect.y, rect.width, rect.height);
+					var extraWidth = rect.width * zoom - rect.width;
+					var extraHeight = rect.height * zoom - rect.height;
+
+					g2.drawScaledSubImage(set.bitmap, rect.x, rect.y, rect.width, rect.height, tile.x + pos.x + (extraWidth * tileX), tile.y + pos.y + (extraHeight * tileY), rect.width * zoom, rect.height * zoom);
 				}
 			}
 		}

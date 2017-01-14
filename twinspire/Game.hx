@@ -13,6 +13,7 @@ import twinspire.render.Tile;
 import twinspire.geom.Rect;
 
 import kha.math.FastVector2 in FV2;
+import kha.math.FastVector3 in FV3;
 import kha.math.FastVector4 in FV4;
 import kha.math.Vector2 in V2;
 import kha.math.Vector4 in V4;
@@ -147,9 +148,9 @@ class Game
 	/**
 	* Initialise the TileMap. Assumes that you wish the TileMap to be rendered to the game screen.
 	*/
-	public function initTileMap():Void
+	public function initTileMap(tilewidth:Int, tileheight:Int):Void
 	{
-		_tileMap = new TileMap();
+		_tileMap = new TileMap(tilewidth, tileheight);
 		_showTileMap = true;
 	}
 
@@ -161,7 +162,7 @@ class Game
 		var contents = file.toString();
 		var data:TsTileMap = Json.parse(contents);
 
-		_tileMap = new TileMap();
+		_tileMap = new TileMap(data.tilewidth, data.tileheight);
 		for (i in 0...data.tilesets.length)
 		{
 			var set:TsTileset = data.tilesets[i];
@@ -199,7 +200,7 @@ class Game
 	public function addTileMapLayerFromCSV(file:Blob, set:Tileset):Bool
 	{
 		try
-		{	
+		{
 			var contents = file.readUtf8String();
 			var lines = contents.split('\n');
 			var tiles = new Array<Tile>();
@@ -245,7 +246,7 @@ class Game
 			var contents = file.readUtf8String();
 			var data:TiledMap = Json.parse(contents);
 
-			_tileMap = new TileMap();
+			_tileMap = new TileMap(data.tilewidth, data.tileheight);
 
 			// TODO
 
@@ -591,11 +592,11 @@ class Game
 	/**
 	* Renders any present levels to the game screen.
 	*/
-	public function renderCurrent(pos:FV2, size:FV2)
+	public function renderCurrent(pos:FV2, size:FV2, zoom:Float = 1.0)
 	{
 		if (_showTileMap)
 		{
-			_tileMap.render(g2, pos, size);
+			_tileMap.render(g2, pos, size, zoom);
 		}
 	}
 
