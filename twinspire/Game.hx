@@ -159,10 +159,25 @@ class Game
 	*/
 	public function initTileMapFromJson(file:Blob):Bool
 	{
+		_tileMap = createTileMapFromJson(file);
+		if (_tileMap == null)
+			return false;
+
+		_showTileMap = true;
+		return true;
+	}
+
+	/**
+	* Create a TileMap from a JSON file without setting it internally.
+	*
+	* @return Returns the created TileMap, if successful, otherwise null.
+	*/
+	public function createTileMapFromJson(file:Blob):TileMap
+	{
 		var contents = file.toString();
 		var data:TsTileMap = Json.parse(contents);
 
-		_tileMap = new TileMap(data.tilewidth, data.tileheight);
+		var map = new TileMap(data.tilewidth, data.tileheight);
 		for (i in 0...data.tilesets.length)
 		{
 			var set:TsTileset = data.tilesets[i];
@@ -171,33 +186,32 @@ class Game
 			if (blob == null)
 			{
 				throw "Tried to load a blob with the name " + csvName + ".";
-				return false;
+				return null;
 			}
 
 			var img:Image = Reflect.field(Assets.images, set.assetName);
 			if (img == null)
 			{
 				throw "Tried to load an image with the name " + set.assetName + ".";
-				return false;
+				return null;
 			}
 
 			var tileset = new Tileset(img, set.tilewidth, set.tileheight);
 
-			if (!addTileMapLayerFromCSV(blob, tileset))
+			if (!addTileMapLayerFromCSV(map, blob, tileset))
 			{
 				throw "Loading a TileMap with the resources: " + csvName + " & " + set.assetName + " did not appear to work.";
-				return false;
+				return null;
 			}
 		}
 
-		_showTileMap = true;
-		return true;
+		return map;
 	}
 
 	/**
 	* Add a tile layer from a CSV file with its respective Tileset.
 	*/
-	public function addTileMapLayerFromCSV(file:Blob, set:Tileset):Bool
+	public function addTileMapLayerFromCSV(map:TileMap, file:Blob, set:Tileset):Bool
 	{
 		try
 		{
@@ -224,8 +238,8 @@ class Game
 				y++;
 			}
 
-			_tileMap.addLayer(tiles, set);
-
+			map.addLayer(tiles, set);
+			
 			return true;
 		}
 		catch (msg:String)
