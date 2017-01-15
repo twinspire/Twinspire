@@ -5,6 +5,7 @@
 	"releasenote": "Foundations.",
 	"version": "0.2.0-beta",
 	"url": "https://github.com/twinspire/Twinspire",
+	"classPath": "twinspire/",
 	"tags": [
 		"kha", "utility"
 	],

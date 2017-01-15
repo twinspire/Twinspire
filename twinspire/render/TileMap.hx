@@ -89,7 +89,7 @@ class TileMap
 				var tileX = Math.floor(tile.x / _tilewidth);
 				var tileY = Math.floor(tile.y / _tileheight);
 
-				if ((tile.x + (_tilewidth * tileX) + position.x >= pos.x && tile.y + (_tileheight * tileY) + position.y >= pos.y) &&
+				if ((tile.x + (_tilewidth * tileX) + position.x >= -pos.x && tile.y + (_tileheight * tileY) + position.y >= -pos.y) &&
 					(tile.x + position.x < pos.x + size.x && tile.y + position.y < pos.y + size.y))
 				{
 					var rect = new Rect(0, 0, 0, 0);
@@ -111,7 +111,7 @@ class TileMap
 					var extraWidth = rect.width * zoom - rect.width;
 					var extraHeight = rect.height * zoom - rect.height;
 
-					g2.drawScaledSubImage(set.bitmap, rect.x, rect.y, rect.width, rect.height, tile.x + pos.x + (extraWidth * tileX), tile.y + pos.y + (extraHeight * tileY), rect.width * zoom, rect.height * zoom);
+					g2.drawScaledSubImage(set.bitmap, rect.x, rect.y, rect.width, rect.height, tile.x + -pos.x + (extraWidth * tileX), tile.y + -pos.y + (extraHeight * tileY), rect.width * zoom, rect.height * zoom);
 				}
 			}
 		}

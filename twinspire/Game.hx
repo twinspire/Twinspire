@@ -39,9 +39,14 @@ class Game
 {
 
 	private var g2:Graphics2;
+	private var _frames:UInt;
 	private var _lastTime:Float;
 	private var _events:Array<Event>;
 	private var _error:String;
+	private var _regularFont:Font;
+	private var _headingFont:Font;
+	private var _regularFontSize:Int;
+	private var _headingFontSize:Int;
 
 	private var _padding:Int;
 	private var _dir:String = 'down';
@@ -60,6 +65,12 @@ class Game
 	public var currentEvent:Event;
 
 	/**
+	* Show frames per second in the top-left corner of the game window.
+	* Requires initialisation of fonts to use (`initFonts`).
+	*/
+	public var showFramesPerSecond:Bool;
+
+	/**
 	* Create a `Game`, initialise the system and load all available assets.
 	*/
 	public static function create(options:SystemOptions, callback:Game -> Void)
@@ -75,6 +86,8 @@ class Game
 
 	public function new()
 	{
+		_frames = 0;
+		_lastTime = 0;
 		initEvents();
 	}
 
@@ -144,6 +157,17 @@ class Game
 	* Retrieve the most recent error.
 	*/
 	public function error() return _error;
+
+	/**
+	* Initialise basic fonts that this game instance will use for drawing GUI components.
+	*/
+	public function initFonts(regularFont:Font, regularFontSize:Int, headingFont:Font, headingFontSize:Int)
+	{
+		_regularFont = regularFont;
+		_headingFont = headingFont;
+		_regularFontSize = regularFontSize;
+		_headingFontSize = headingFontSize;
+	}
 
 	/**
 	* Initialise the TileMap. Assumes that you wish the TileMap to be rendered to the game screen.
@@ -239,7 +263,7 @@ class Game
 			}
 
 			map.addLayer(tiles, set);
-			
+
 			return true;
 		}
 		catch (msg:String)
@@ -289,6 +313,8 @@ class Game
 		else
 			_dir = dir;
 	}
+
+
 
 	/**
 	* Draws a bitmap image at the given location, with an optional size and scale9 value.
@@ -608,10 +634,24 @@ class Game
 	*/
 	public function renderCurrent(pos:FV2, size:FV2, zoom:Float = 1.0)
 	{
+		var deltaTime = System.time - _lastTime;
 		if (_showTileMap)
 		{
 			_tileMap.render(g2, pos, size, zoom);
 		}
+
+
+		if (showFramesPerSecond && _regularFont != null)
+		{
+			g2.font = _regularFont;
+			g2.color = RealColors.yellow;
+			g2.fontSize = 16;
+			var fps = Std.int(_frames / deltaTime);
+			g2.drawString("" + fps, 2, 2);
+		}
+		
+		_lastTime = System.time;
+		_frames++;
 	}
 
 
