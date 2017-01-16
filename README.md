@@ -61,14 +61,15 @@ class Main
 
 	static function render(buffer:Framebuffer)
 	{
-		if (!game.hasInited())
-			game.init(buffer);
+		game.begin(buffer);
 
 		buffer.g2.begin(true, RealColors.cornflowerBlue);
 
 		game.renderCurrent(new FV2(0, 0), new FV2(cast System.windowWidth(), cast System.windowHeight()));
 
 		buffer.g2.end();
+
+		game.end();
 	}
 
 }
@@ -111,12 +112,13 @@ class Main
 
 	static function render(buffer:Framebuffer)
 	{
-		if (!game.hasInited())
-			game.init(buffer);
+		game.begin(buffer);
 		
 		while (game.pollEvent())
 		{
-			//Handle events
+			game.handleEvent();
+
+			// Any extra event handling goes here
 		}
 
 		buffer.g2.begin(true, RealColors.cornflowerBlue);
@@ -124,6 +126,8 @@ class Main
 		game.renderCurrent(new FV2(0, 0), new FV2(cast System.windowWidth(), cast System.windowHeight()));
 
 		buffer.g2.end();
+
+		game.end();
 	}
 
 }
