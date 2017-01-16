@@ -10,9 +10,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 LEGEND:
 
+ - Event Handling routines (public utility functions)
  - Initialisation routines
  - Basic drawing routines
- - Event handling functions
+ - Event handling functions (private internal functions)
 
 */
 
@@ -53,6 +54,14 @@ import haxe.Json;
 using twinspire.events.EventType;
 using StringTools;
 
+/**
+* The `Game` class is the basis for drawing routines, handling events, and rendering levels within Twinspire.
+*
+* It contains all of the utility functions you need to draw and manipulate objects within your game, which includes
+* controlling the flow of UI components, adjusting zoom factors, among other utilities.
+*
+* To use, simply call `Game.create` with the appropriate parameters to initialise a game.
+*/
 class Game
 {
 
@@ -65,6 +74,15 @@ class Game
 	private var _headingFont:Font;
 	private var _regularFontSize:Int;
 	private var _headingFontSize:Int;
+
+	private var _mousePosition:FV2;
+	private var _mouseButtonIndex:Int;
+	private var _isMouseDown:Bool;
+	private var _hasMouseReleased:Bool;
+	private var _isMouseScrolling:Bool;
+	private var _scrollDirection:Int;
+	private var _keysDown:Array<Bool>;
+	private var _keysUp:Array<Bool>;
 
 	private var _padding:Int;
 	private var _dir:String = 'down';
@@ -90,6 +108,9 @@ class Game
 
 	/**
 	* Create a `Game`, initialise the system and load all available assets.
+	*
+	* @param options The system options used to declare title and size of the game client.
+	* @param callback The function handler that is called when all assets have been loaded.
 	*/
 	public static function create(options:SystemOptions, callback:Game -> Void)
 	{
@@ -107,7 +128,12 @@ class Game
 		_frames = 0;
 		_lastTime = 0;
 		initEvents();
+
+		_keysDown = [ for(i in 0...255) false ];
+		_keysUp = [ for(i in 0...255) false ];
 	}
+
+	// Event Handling routines
 
 	private function initEvents()
 	{
@@ -139,6 +165,8 @@ class Game
 	* Processes all of the events currently waiting in the event queue
 	* until there is none left. This should be called before any rendering
 	* takes place.
+	*
+	* @return Returns `true` if there are events waiting to be processed. Otherwise `false`.
 	*/
 	public function pollEvent():Bool
 	{
@@ -147,37 +175,96 @@ class Game
 			currentEvent = null;
 			return false;
 		}
-		
+
 		currentEvent = _events[0].clone();
 		_events.splice(0, 1);
 		return true;
 	}
 
 	/**
-	* Initialisation routines.
+	* Handle events within this game instance. You may need to call this
+	* if you want gui calls to be handled properly, unless you wish to handle
+	* it yourself.
 	*/
+	public function handleEvent():Void
+	{
+		var e = currentEvent;
+		if (e.type == EVENT_MOUSE_MOVE)
+			_mousePosition = new FV2(e.mouseX, e.mouseY);
+		else if (e.type == EVENT_MOUSE_UP)
+		{
+			_mousePosition = new FV2(e.mouseX, e.mouseY);
+			_mouseButtonIndex = e.mouseButton;
+			_isMouseDown = true;
+		}
+		else if (e.type == EVENT_MOUSE_DOWN)
+		{
+			_mousePosition = new FV2(e.mouseX, e.mouseY);
+			_mouseButtonIndex = e.mouseButton;
+			_isMouseDown = false;
+			_hasMouseReleased = true;			
+		}
+		else if (e.type == EVENT_MOUSE_WHEEL)
+		{
+			_isMouseScrolling = true;
+			_scrollDirection = e.mouseDelta;
+		}
+		else if (e.type == EVENT_KEY_DOWN)
+		{
+			if (e.key == CHAR)
+			{
+				_keysDown[e.char.charCodeAt(0)] = true;
+			}
+		}
+		else if (e.type == EVENT_KEY_UP)
+		{
+			if (e.key == CHAR)
+			{
+				_keysDown[e.char.charCodeAt(0)] = false;
+				_keysUp[e.char.charCodeAt(0)] = true;
+			}
+		}
+	}
+
+	// Initialisation routines.
 
 	/**
-	* Initialise the game and reference the buffer.
+	* Begin rendering and reference the buffer.
+	*
+	* @param buffer The `Framebuffer` used to draw graphics to the game client.
 	*/
-	public function init(buffer:Framebuffer)
+	public function begin(buffer:Framebuffer)
 	{
 		g2 = buffer.g2;
-		_inited = true;	
+		_inited = true;
 	}
 
 	/**
-	* Returns the value detecting if the game has been initialised.
+	* End rendering and set all values to their defaults before the next frame.
 	*/
-	public function hasInited() return _inited;
+	public function end()
+	{
+		_keysDown = [ for(i in 0...255) false ];
+		_keysUp = [ for(i in 0...255) false ];
+		_isMouseDown = false;
+		_hasMouseReleased = false;
+		_isMouseScrolling = false;
+	}
 
 	/**
 	* Retrieve the most recent error.
+	*
+	* @return Returns the `_error` value of the most recently detected error.
 	*/
 	public function error() return _error;
 
 	/**
 	* Initialise basic fonts that this game instance will use for drawing GUI components.
+	*
+	* @param regularFont A font used for regular use.
+	* @param regularFontSize The font size used for the regular font.
+	* @param headingFont A font used for headings.
+	* @param headingFontSize The font size used for headings.
 	*/
 	public function initFonts(regularFont:Font, regularFontSize:Int, headingFont:Font, headingFontSize:Int)
 	{
@@ -189,6 +276,9 @@ class Game
 
 	/**
 	* Initialise the TileMap. Assumes that you wish the TileMap to be rendered to the game screen.
+	*
+	* @param tilewidth The width of each tile within the TileMap.
+	* @param tileheight The height of each tile within the TileMap.
 	*/
 	public function initTileMap(tilewidth:Int, tileheight:Int):Void
 	{
@@ -198,6 +288,10 @@ class Game
 
 	/**
 	* Initialise a TileMap from the Twinspire JSON file format.
+	*
+	* @param file The Blob Asset that is a file containing JSON data for a TileMap.
+	*
+	* @return Returns `true` if the TileMap was successfully created, `false` otherwise.
 	*/
 	public function initTileMapFromJson(file:Blob):Bool
 	{
@@ -211,6 +305,8 @@ class Game
 
 	/**
 	* Create a TileMap from a JSON file without setting it internally.
+	*
+	* @param file The Blob Asset that is a file containing JSON data for a TileMap.
 	*
 	* @return Returns the created TileMap, if successful, otherwise null.
 	*/
@@ -252,12 +348,18 @@ class Game
 
 	/**
 	* Add a tile layer from a CSV file with its respective Tileset.
+	*
+	* @param map The TileMap you want to add a layer to.
+	* @param file The Blob file containing the CSV data you want to add.
+	* @param set The `Tileset` used with the `file` to add a layer to the given map.
+	*
+	* @return Returns `true` if successful, `false` otherwise.
 	*/
 	public function addTileMapLayerFromCSV(map:TileMap, file:Blob, set:Tileset):Bool
 	{
 		try
 		{
-			var contents = file.readUtf8String();
+			var contents = file.toString();
 			var lines = contents.split('\n');
 			var tiles = new Array<Tile>();
 			var x = 0;
@@ -271,10 +373,7 @@ class Game
 				for (id in line.split(','))
 				{
 					var value:Int = Std.parseInt(id);
-					if (value != null)
-					{
-						tiles.push(new Tile(value, new FV2(set.tilewidth * x, set.tileheight * y)));
-					}
+					tiles.push(new Tile(value, new FV2(set.tilewidth * x, set.tileheight * y)));
 					x++;
 				}
 				y++;
@@ -294,12 +393,16 @@ class Game
 	/**
 	* A work-in-progress. Do not use.
 	* Initialise a map from the Tiled Json format.
+	*
+	* @param `file` The Blob Asset that is a file containing JSON data from the Tiled file format.
+	*
+	* @return Returns `true` if a tilemap was successfully created, `false` otherwise.
 	*/
 	public function initMapFromTiledJSON(file:Blob):Bool
 	{
 		try
 		{
-			var contents = file.readUtf8String();
+			var contents = file.toString();
 			var data:TiledMap = Json.parse(contents);
 
 			_tileMap = new TileMap(data.tilewidth, data.tileheight);
@@ -315,14 +418,15 @@ class Game
 		}
 	}
 
-	/**
-	* Basic drawing routines
-	*/
+	// Basic drawing routines
 
 	/**
 	* Changes the direction of the flow. Acceptable values are: 'left', 'right', 'up', 'down'
 	* Flow automatically determines where the next drawn object should be placed, unless specified.
 	* When position is specified in a drawn object, flow continues from that position.
+	*
+	* @param dir The string value used to direct the flow of UI components. If it is not a valid value,
+	*    the direction defaults back to 'down'.
 	*/
 	public function changeDirection(dir:String)
 	{
@@ -338,6 +442,12 @@ class Game
 	* Draws a bitmap image at the given location, with an optional size and scale9 value.
 	* If size is not given, the bitmap will be drawn at its original size.
 	* If scale9Grid is given, the bitmap will be drawn scaled within those bounds.
+	*
+	* @param src The Image Assets you want to draw.
+	* @param pos The `FastVector2` value to use to specify the position. If null, it will determine position
+	*    based on the last position of the last drawn object.
+	* @param size The `FastVector2` value to use to specify the size. If null, it will use the original image width and height.
+	* @param scale9Grid A `Rect` value to specify the bounds of the inner portion of the image to stretch when scaling.
 	*/
 	public function bitmap(src:Image, pos:FV2 = null, size:FV2 = null, scale9Grid:Rect = null)
 	{
@@ -467,14 +577,34 @@ class Game
 
 	/**
 	* Draw a label with the given font, size and colour.
+	*
+	* @param text The text to display.
+	* @param font The font to use. If null, it will fallback to `regularFont`. If neither is available, the label will not draw.
+	* @param fontSize The size of the font to use. 12 is the default value. If `regularFont` is used, it will use that respective size instead.
+	* @param pos The position of the label. If null, it will determine the position based on the last drawn object.
+	* @param size The size of the label. This does not affect the label itself, but will affect the flow of the scene.
+	* @param fontColor The color of the label. Default value is `0xFFFFFFFF` (White).
+	* @param shadow A `Bool` value determining if a shadow should be cast. It simply draws another label with the same text underneath.
+	* @param shadowX The `x` position of the shadow label, relative to the position of the actual label.
+	* @param shadowY The `y` position of the shadow label, relative to the position of the actual label.
+	* @param shadowColor The color of the shadow label. Default is `0xFF000000` (Black).
 	*/
-	public function label(text:String, font:Font, fontSize:Int, pos:FV2 = null, size:FV2 = null, fontColor:UInt = 0xFFFFFFFF, shadow:Bool = false, shadowX:Int = 1, shadowY:Int = 1, shadowColor:UInt = 0xFF000000)
+	public function label(text:String, ?font:Font = null, ?fontSize:Int = 12, ?pos:FV2 = null, ?size:FV2 = null, ?fontColor:UInt = 0xFFFFFFFF, ?shadow:Bool = false, ?shadowX:Int = 1, ?shadowY:Int = 1, ?shadowColor:UInt = 0xFF000000)
 	{
 		_currentPos = resolvePosition(pos, size);
 
+		if (font == null && _regularFont == null)
+			return;
+		else if (font == null)
+		{
+			g2.font = _regularFont;
+			fontSize = _regularFontSize;	
+		}
+		else
+			g2.font = font;
+
 		var lineIndex:Int = 0;
 		
-		g2.font = font;
 		g2.fontSize = fontSize;
 		var fontHeight = font.height(fontSize);
 		
@@ -501,10 +631,30 @@ class Game
 
 	/**
 	* Draw a multiline label with the given font, size and colour.
+	*
+	* @param text The text to display.
+	* @param font The font to use. If null, it will fallback to `regularFont`. If neither is available, the label will not draw.
+	* @param fontSize The size of the font to use. 12 is the default value. If `regularFont` is used, it will use that respective size instead.
+	* @param pos The position of the label. If null, it will determine the position based on the last drawn object.
+	* @param size The size of the label. This does not affect the label itself, but will affect the flow of the scene.
+	* @param fontColor The color of the label. Default value is `0xFFFFFFFF` (White).
+	* @param shadow A `Bool` value determining if a shadow should be cast. It simply draws another label with the same text underneath.
+	* @param shadowX The `x` position of the shadow label, relative to the position of the actual label.
+	* @param shadowY The `y` position of the shadow label, relative to the position of the actual label.
+	* @param shadowColor The color of the shadow label. Default is `0xFF000000` (Black).
+	* @param lineSpacing The spacing between lines by pixel value.
 	*/
 	public function multilineLabel(text:String, font:Font, fontSize:Int, pos:FV2 = null, size:FV2 = null, fontColor:UInt = 0xFFFFFFFF, maxWidth:Float = 150, shadow:Bool = false, shadowX:Int = 1, shadowY:Int = 1, shadowColor:UInt = 0xFF000000, lineSpacing:Int = 1)
 	{
 		_currentPos = resolvePosition(pos, size);
+
+		if (font == null && _regularFont == null)
+			return;
+		else if (font == null)
+		{
+			font = _regularFont;
+			fontSize = _regularFontSize;	
+		}
 
 		var maxWidth:Float = size.x;
 		_lines = [];
@@ -649,6 +799,10 @@ class Game
 
 	/**
 	* Renders any present levels to the game screen.
+	*
+	* @param pos The `FastVector2` value used to determine the position of the camera.
+	* @param size The `FastVector2` value used to determine the rendering view of the camera.
+	* @param zoom A floating-point value used as a percentage to determine the size of the current scene. Default is 1.0.
 	*/
 	public function renderCurrent(pos:FV2, size:FV2, zoom:Float = 1.0)
 	{

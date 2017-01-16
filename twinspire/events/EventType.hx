@@ -13,15 +13,48 @@ package twinspire.events;
 @:enum
 abstract EventType(Int) from Int to Int
 {
+	/**
+	* A mouse button is down.
+	*/
 	var EVENT_MOUSE_DOWN		=	1;
+	/**
+	* A mouse button has released.
+	*/
 	var EVENT_MOUSE_UP			=	2;
+	/**
+	* The mouse has moved.
+	*/
 	var EVENT_MOUSE_MOVE		=	3;
+	/**
+	* The mouse wheel has moved.
+	*/
 	var EVENT_MOUSE_WHEEL		=	4;
+	/**
+	* A keyboard button has been pressed.
+	*/
 	var EVENT_KEY_DOWN			=	5;
+	/**
+	* A keyboard button has been released.
+	*/
 	var EVENT_KEY_UP			=	6;
+	/**
+	* A gamepad axis has moved.
+	*/
 	var EVENT_GAMEPAD_AXIS		=	7;
+	/**
+	* A gamepad button has been pressed.
+	*/
 	var EVENT_GAMEPAD_BUTTON	=	8;
+	/**
+	* The game screen has been touched.
+	*/
 	var EVENT_TOUCH_START		=	9;
+	/**
+	* Any or all fingers have been released from the game screen.
+	*/
 	var EVENT_TOUCH_END			=	10;
+	/**
+	* Any or all fingers have moved on the game screen.
+	*/
 	var EVENT_TOUCH_MOVE		=	11;
 }

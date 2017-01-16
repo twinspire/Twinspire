@@ -2,10 +2,9 @@
 	"name": "Twinspire",
 	"description": "A video game engine and utility library for Kha.",
 	"license": "MIT",
-	"releasenote": "Foundations.",
-	"version": "0.2.0-beta",
+	"releasenote": "Add some basic event handling and start documentation.",
+	"version": "0.2.1-beta",
 	"url": "https://github.com/twinspire/Twinspire",
-	"classPath": "twinspire/",
 	"tags": [
 		"kha", "utility"
 	],

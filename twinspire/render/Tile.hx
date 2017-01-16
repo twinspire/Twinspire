@@ -12,13 +12,31 @@ package twinspire.render;
 
 import kha.math.FastVector2 in FV2;
 
+/**
+* A `Tile` is a simple class containing information useful to TileMap's.
+*/
 class Tile
 {
 
+	/**
+	* The index identifier used to determine what to draw for this tile.
+	*/
 	public var id:Int;
+	/**
+	* The `x` position of this tile.
+	*/
 	public var x:Float;
+	/**
+	* The `y` position of this tile.
+	*/
 	public var y:Float;
 
+	/**
+	* Create a Tile with the given index and position.
+	*
+	* @param id The index identifier used to determine what to draw for this tile.
+	* @param pos The position that this tile will be drawn relative to its TileMap's position.
+	*/
 	public function new(id:Int, pos:FV2)
 	{
 		this.id = id;

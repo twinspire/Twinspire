@@ -10,15 +10,34 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 package twinspire.utils;
 
+/**
+* A series of extra mathematical functions.
+*/
 class ExtraMath
 {
 
+	/**
+	* Round a floating-point number to the nearest integral or decimal number with the given precision.
+	*
+	* @param n The floating-point number to round.
+	* @param prec The precision to round to.
+	*
+	* @return Return the resulting rounded value;
+	*/
 	public static function froundPrecise(n:Float, prec:Int)
 	{
 		var pow = Math.pow(10, prec);
-		return Math.round((n * pow) / pow);
+		var result = Math.round((n * pow) / pow);
+		return result;
 	}
 
+	/**
+	* Gets the minimum number from a series of values.
+	*
+	* @param values The `values` to check.
+	*
+	* @return Returns the lowest value from the given array.
+	*/
 	public static function min(values:Array<Float>)
 	{
 		var result:Float = 0;
@@ -31,6 +50,13 @@ class ExtraMath
 		return result;
 	}
 
+	/**
+	* Gets the maximum number from a series of values.
+	*
+	* @param values The `values` to check.
+	*
+	* @return Returns the highest value from the given array.
+	*/
 	public static function max(values:Array<Float>)
 	{
 		var result:Float = 0;

@@ -15,43 +15,54 @@ import kha.math.FastVector2 in Vector2;
 import kha.graphics2.Graphics;
 import kha.Font;
 
+/**
+* A specific class used to draw GUI components onto a buffer. It may be used in the context of the `Game` class, or it may also be
+* used in your own context.
+*
+* When using your own context, you must handle the events yourself.
+*/
+@:allow(twinspire.Game)
 class Gui
 {
 
+	@:dox(hide)	static var game:Game;
 	@:dox(hide) static var g:Graphics;
 	@:dox(hide) static var padding:Int = 2;
 	@:dox(hide) static var direction:String = "down";
-	@:dox(hide) static var style:GuiStyle;
 
 	public static function init(g2:Graphics):Void
 	{
 		g = g2;
-		style = {};
+	}
+
+	public static function initWithGame(g:Game):Void
+	{
+		game = g;
 	}
 
 	public static function button(label:String, ?size:Vector2 = null):Bool
 	{
-
+		return true;
 	}
 
 	public static function smallButton(label:String):Bool
 	{
-
+		return true;
 	}
 
 	public static function checkbox(label:String, value:Bool):Bool
 	{
-
+		return true;
 	}
 
 	public static function radioButton(label:String, active:Bool):Bool
 	{
-
+		return true;
 	}
 
 	public static function dropdown(label:String, current_item:String, items:Array<String>):Bool
 	{
-
+		return true;
 	}
 
 	public static function progressBar(fraction:Float, size:Vector2, overlay:String = null):Void
@@ -61,12 +72,12 @@ class Gui
 
 	public static function inputText(label:String, size:Vector2 = null):Bool
 	{
-
+		return true;
 	}
 
 	public static function inputTextMultiline(label:String, size:Vector2 = null):Bool
 	{
-
+		return true;
 	}
 
 }

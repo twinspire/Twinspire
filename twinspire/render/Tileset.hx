@@ -14,14 +14,39 @@ import twinspire.geom.Rect;
 
 import kha.Image;
 
+/**
+* A `Tileset` is required for `TileMap`'s to enable the drawing of tiles.
+*
+* Tileset's contain basic data, including the individual `tilewidth` and `tileheight` for each tile in their respective `bitmap` image.
+*/
 class Tileset
 {
 
+	/**
+	* The width of each tile within the `bitmap`.
+	*/
 	public var tilewidth:Float;
+	/**
+	* The width of each tile within the `bitmap`.
+	*/
 	public var tileheight:Float;
+	/**
+	* The amount of tiles that can be found in this Tileset.
+	* Set in the constructor. It is not recommended to change this value.
+	*/
 	public var tilecount:Int;
+	/**
+	* The image used for drawing tiles.
+	*/
 	public var bitmap:Image;
 
+	/**
+	* Create a `Tileset` with an image, and with its respective width and height for each tile.
+	*
+	* @param bitmap The `Image` asset to use as the basis for this Tileset.
+	* @param tilewidth The width of each tile.
+	* @param tileheight The height of each tile.
+	*/
 	public function new(bitmap:Image, tilewidth:Float, tileheight:Float)
 	{
 		this.bitmap = bitmap;
@@ -32,6 +57,13 @@ class Tileset
 		tilecount = Math.floor(bitmap.realWidth / tilewidth) + Math.floor(bitmap.realHeight / tileheight);
 	}
 
+	/**
+	* Gets a `Rect` defining the position and size of a given index within `bitmap`.
+	*
+	* @param index The index to search for.
+	*
+	* @return Returns a `Rect` defining the position and size of the given index.
+	*/
 	public function getSourceImageByIndex(index:Int):Rect
 	{
 		var tilesX = bitmap.realWidth / tilewidth;

@@ -12,29 +12,79 @@ package twinspire.events;
 
 import kha.Key;
 
+/**
+* The `Event` class contains data related to the event handling used internally by the `Game` class.
+*/
 class Event
 {
 
+	/**
+	* The type of event this is. Use `EventType` to check the types.
+	*/
 	public var type:Int;
-	
+	/**
+	* The position of the mouse on the `x` axis, relative to the game client.
+	*/
 	public var mouseX:Int;
+	/**
+	* The position of the mouse on the `y` axis, relative to the game client.
+	*/
 	public var mouseY:Int;
+	/**
+	* Determines which mouse button was pressed. This value is zero-based.
+	*/
 	public var mouseButton:Int;
+	/**
+	* Determines by how much the mouse moved since the last event to MouseMove on the `x` axis.
+	*/
 	public var mouseMovementX:Int;
+	/**
+	* Determines by how much the mouse moved since the last event to MouseMove on the `y` axis.
+	*/
 	public var mouseMovementY:Int;
+	/**
+	* A value determining which direction the mouse wheel moved. 1 for down, -1 for up.
+	*/
 	public var mouseDelta:Int;
-
+	/**
+	* The key that was pressed during a KEY_EVENT.
+	*/
 	public var key:Key;
+	/**
+	* If the key type is a character, it's value is stored here.
+	*/
 	public var char:String;
-
+	/**
+	* The index of the gamepad currently in use. This value is zero-based.
+	*/
 	public var gamepadId:Int;
+	/**
+	* TODO: What is this?
+	*/
 	public var gamepadAxis:Int;
+	/**
+	* TODO: What is this?
+	*/
 	public var gamepadAxisValue:Float;
+	/**
+	* The gamepad button pressed.
+	*/
 	public var gamepadButton:Int;
+	/**
+	* TODO: What is this?
+	*/
 	public var gamepadButtonValue:Float;
-
+	/**
+	* TODO: What is this?
+	*/
 	public var touchIndex:Int;
+	/**
+	* The x position of the finger in the game.
+	*/
 	public var touchX:Int;
+	/**
+	* The y position of the finger in the game.
+	*/
 	public var touchY:Int;
 
 	public function new()

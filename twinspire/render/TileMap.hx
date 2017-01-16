@@ -15,6 +15,9 @@ import kha.math.FastVector2 in FV2;
 import kha.graphics2.Graphics;
 import kha.System;
 
+/**
+* A `TileMap` provides a 2D landscape for drawing levels using tiles.
+*/
 class TileMap
 {
 
@@ -26,13 +29,21 @@ class TileMap
 	private var _tileheight:Int;
 
 	/**
-	* Determines is Tilesets are bound to each individual tile layer, or
+	* Determines if Tilesets are bound to each individual tile layer, or
 	* if they can be used across all tile layers.
 	*/
 	public var isLayerRestricted:Bool;
-
+	/**
+	* Specifies the position of the map and where to draw it.
+	*/
 	public var position:FV2;
 
+	/**
+	* Creates a `TileMap` with the given tile width and height.
+	*
+	* @param tilewidth The width of each tile.
+	* @param tileheight The height of each tile.
+	*/
 	public function new(tilewidth:Int, tileheight:Int)
 	{
 		_setMap = new Map<Int, Tileset>();
@@ -48,11 +59,22 @@ class TileMap
 		_tiles.splice(0, _tiles.length);
 	}
 
+	/**
+	* Add a series of tiles onto the next layer. The tiles will not render
+	* without an available Tileset.
+	*
+	* @param tiles An array of tiles.
+	*/
 	public function addTilelayer(tiles:Array<Tile>)
 	{
 		_tiles.push(tiles);
 	}
 
+	/**
+	* Add a `Tileset` to the `TileMap`.
+	*
+	* @param set The Tileset to add.
+	*/
 	public function addTileset(set:Tileset)
 	{
 		_indexCount += set.tilecount;
@@ -60,6 +82,12 @@ class TileMap
 		_setMap.set(_indexCount, set);
 	}
 
+	/**
+	* Add a layer containing an array of tiles with a tileset.
+	*
+	* @param tiles An array of tiles.
+	* @param set The Tileset to add.
+	*/
 	public function addLayer(tiles:Array<Tile>, set:Tileset)
 	{
 		_tiles.push(tiles);
@@ -68,6 +96,15 @@ class TileMap
 		_setMap.set(_indexCount, set);
 	}
 
+	/**
+	* Renders the TileMap to the current buffer at the given position offset and size
+	* limit. You may optionally change the zoom factor.
+	*
+	* @param g2 The `Graphics` component belonging to a 2D buffer on which to render `this` TileMap.
+	* @param pos The offset used to determine the camera position.
+	* @param size The size limitation for this TileMap. Tiles will stop rendering after a certain point.
+	* @param zoom The zoom factor used to determine the scale of each tile as they're drawn. Default value is 1.0.
+	*/
 	public function render(g2:Graphics, pos:FV2, size:FV2, zoom:Float = 1.0)
 	{
 		var scaleScreen = zoom;
