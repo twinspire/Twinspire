@@ -277,12 +277,14 @@ class Game
 	/**
 	* Initialise the TileMap. Assumes that you wish the TileMap to be rendered to the game screen.
 	*
+	* @param width The number of tiles that represent the width of the map.
+	* @param height The number of tiles that represent the height of the map.
 	* @param tilewidth The width of each tile within the TileMap.
 	* @param tileheight The height of each tile within the TileMap.
 	*/
-	public function initTileMap(tilewidth:Int, tileheight:Int):Void
+	public function initTileMap(width:Int, height:Int, tilewidth:Int, tileheight:Int):Void
 	{
-		_tileMap = new TileMap(tilewidth, tileheight);
+		_tileMap = new TileMap(width, height, tilewidth, tileheight);
 		_showTileMap = true;
 	}
 
@@ -315,7 +317,7 @@ class Game
 		var contents = file.toString();
 		var data:TsTileMap = Json.parse(contents);
 
-		var map = new TileMap(data.tilewidth, data.tileheight);
+		var map = new TileMap(data.tileCountX, data.tileCountY, data.tilewidth, data.tileheight);
 		for (i in 0...data.tilesets.length)
 		{
 			var set:TsTileset = data.tilesets[i];
@@ -335,6 +337,16 @@ class Game
 			}
 
 			var tileset = new Tileset(img, set.tilewidth, set.tileheight);
+			if (set.canPassThrough != null)
+				tileset.canPassThrough = set.canPassThrough;
+			if (set.canPassUp != null)
+				tileset.canPassUp = set.canPassUp;
+			if (set.canPassDown != null)
+				tileset.canPassDown = set.canPassDown;
+			if (set.canPassLeft != null)
+				tileset.canPassLeft = set.canPassLeft;
+			if (set.canPassRight != null)
+				tileset.canPassRight = set.canPassRight;
 
 			if (!addTileMapLayerFromCSV(map, blob, tileset))
 			{
@@ -405,7 +417,7 @@ class Game
 			var contents = file.toString();
 			var data:TiledMap = Json.parse(contents);
 
-			_tileMap = new TileMap(data.tilewidth, data.tileheight);
+			_tileMap = new TileMap(data.width, data.height, data.tilewidth, data.tileheight);
 
 			// TODO
 
@@ -417,6 +429,11 @@ class Game
 			return false;
 		}
 	}
+
+	/**
+	* Gets the currently rendered TileMap.
+	*/
+	public function getCurrentTileMap() return _tileMap;
 
 	// Basic drawing routines
 

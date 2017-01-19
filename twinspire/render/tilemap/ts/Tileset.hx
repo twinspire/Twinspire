@@ -15,4 +15,9 @@ typedef Tileset =
 	var assetName:String;
 	var tilewidth:Float;
 	var tileheight:Float;
+	@:optional var canPassThrough:Array<Bool>;
+	@:optional var canPassLeft:Array<Bool>;
+	@:optional var canPassRight:Array<Bool>;
+	@:optional var canPassUp:Array<Bool>;
+	@:optional var canPassDown:Array<Bool>;
 }

@@ -12,6 +12,8 @@ package twinspire.render.tilemap.ts;
 
 typedef TileMap =
 {
+	var tileCountX:Int;
+	var tileCountY:Int;
 	var tilewidth:Int;
 	var tileheight:Int;
 	var layersFromPaths:Array<String>;

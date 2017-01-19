@@ -39,7 +39,32 @@ class Tileset
 	* The image used for drawing tiles.
 	*/
 	public var bitmap:Image;
-
+	/**
+	* An array of boolean values, based on tile index, that determine if
+	* the tile can be passed through.
+	*/
+	public var canPassThrough:Array<Bool>;
+	/**
+	* An array of boolean values, based on tile index, that determine if
+	* an object or player can pass left from this tile.
+	*/
+	public var canPassLeft:Array<Bool>;
+	/**
+	* An array of boolean values, based on tile index, that determine if
+	* an object or player can pass right from this tile.
+	*/
+	public var canPassRight:Array<Bool>;
+	/**
+	* An array of boolean values, based on tile index, that determine if
+	* an object or player can pass up from this tile.
+	*/
+	public var canPassUp:Array<Bool>;
+	/**
+	* An array of boolean values, based on tile index, that determine if
+	* an object or player can pass down from this tile.
+	*/
+	public var canPassDown:Array<Bool>;
+	
 	/**
 	* Create a `Tileset` with an image, and with its respective width and height for each tile.
 	*
