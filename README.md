@@ -92,12 +92,15 @@ To use this event, we would pass `game.currentEvent` as below:
 ```haxe
 package;
 
+using twinspire.events.EventType;
+
 import twinspire.RealColors;
 import twinspire.Game;
 
 import kha.math.FastVector2 in FV2;
 import kha.Framebuffer;
 import kha.System;
+import kha.Key;
 
 class Main 
 {
@@ -122,7 +125,10 @@ class Main
 		{
 			game.handleEvent();
 
-			// Any extra event handling goes here
+			var e = game.currentEvent;
+			if (e.type == EVENT_KEY_UP)
+				if (e.key == Key.ENTER)
+					trace('Enter was pressed and released.');
 		}
 
 		buffer.g2.begin(true, RealColors.cornflowerBlue);
