@@ -9,9 +9,13 @@ The following features include:
  * Some simple GUI components
 
 ## Installation
-There is currently no Haxe repository despite a `haxelib.json` file exists. Instead, you should clone this repository on your computer and make it a haxelib dev directory.
+You can either clone this repository on your computer and make it a haxelib dev directory (may be stable, use with caution).
 
     haxelib git twinspire https://github.com/twinspire/Twinspire.git
+
+Or install it directly from Haxelib (stable release):
+
+    haxelib install twinspire
 
 ## Community and Support
 If you find a bug or an issue, please use the issue tracker here.
