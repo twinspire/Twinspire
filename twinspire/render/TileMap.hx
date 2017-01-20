@@ -29,6 +29,7 @@ class TileMap
 	private var _indexCount:Int;
 	private var _setMap:Map<Int, Tileset>;
 	private var _setIndices:Array<Int>;
+	private var _extraData:Map<String, Dynamic>;
 
 	/**
 	* The width of each tile in the TileMap.
@@ -62,6 +63,7 @@ class TileMap
 		_tiles = [[]];
 		_setIndices = [];
 		_indexCount = 0;
+		_extraData = new Map<String, Dynamic>();
 		position = new FV2(0, 0);
 
 		this.tilewidth = tilewidth;
@@ -72,6 +74,31 @@ class TileMap
 		isLayerRestricted = true;
 
 		_tiles.splice(0, _tiles.length);
+	}
+
+	/**
+	* Set a key/value pair for a given tile index.
+	*
+	* @param index The tile index to store the key/value pair in.
+	* @param name The name of the key to use.
+	* @param value The value to store for the given name.
+	*/
+	public function setExtraData(index:Int, name:String, value:Dynamic)
+	{
+		_extraData.set(name + "_" + index, value);
+	}
+
+	/**
+	* Gets the value stored for a given tile index with its respective name.
+	*
+	* @param index The tile index to look for.
+	* @param name The name of the extra data to look for.
+	*
+	* @return Returns the value associated with the given tile index and name.
+	*/
+	public function getExtraData(index:Int, name:String):Dynamic
+	{
+		return _extraData.get(name + "_" + index);
 	}
 
 	/**
