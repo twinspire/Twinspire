@@ -75,14 +75,38 @@ class Game
 	private var _regularFontSize:Int;
 	private var _headingFontSize:Int;
 
-	private var _mousePosition:FV2;
-	private var _mouseButtonIndex:Int;
-	private var _isMouseDown:Bool;
-	private var _hasMouseReleased:Bool;
-	private var _isMouseScrolling:Bool;
-	private var _scrollDirection:Int;
-	private var _keysDown:Array<Bool>;
-	private var _keysUp:Array<Bool>;
+	/**
+	* Gets the mouse position within the game client.
+	*/
+	public static var mousePosition:FV2;
+	/**
+	* Gets the index of the button that was most recently pressed.
+	*/
+	public static var mouseButtonIndex:Int;
+	/**
+	* Gets a value specifying if a mouse button is held down.
+	*/
+	public static var isMouseDown:Bool;
+	/**
+	* Gets a value specifying is a mouse button has been released.
+	*/
+	public static var hasMouseReleased:Bool;
+	/**
+	* Gets a value specifying if the mouse wheel has moved.
+	*/
+	public static var isMouseScrolling:Bool;
+	/**
+	* Gets a value specifying the direction the mouse wheel moved.
+	*/
+	public static var scrollDirection:Int;
+	/**
+	* Gets an array of boolean values determining which keys, by key code, are pressed down.
+	*/
+	public static var keysDown:Array<Bool>;
+	/**
+	* Gets an array of boolean values determining which keys, by key code, have been released.
+	*/
+	public static var keysUp:Array<Bool>;
 
 	private var _padding:Int;
 	private var _dir:String = 'down';
@@ -129,8 +153,9 @@ class Game
 		_lastTime = 0;
 		initEvents();
 
-		_keysDown = [ for(i in 0...255) false ];
-		_keysUp = [ for(i in 0...255) false ];
+		mousePosition = new FV2(0, 0);
+		keysDown = [ for(i in 0...255) false ];
+		keysUp = [ for(i in 0...255) false ];
 	}
 
 	// Event Handling routines
@@ -190,38 +215,38 @@ class Game
 	{
 		var e = currentEvent;
 		if (e.type == EVENT_MOUSE_MOVE)
-			_mousePosition = new FV2(e.mouseX, e.mouseY);
+			mousePosition = new FV2(e.mouseX, e.mouseY);
 		else if (e.type == EVENT_MOUSE_UP)
 		{
-			_mousePosition = new FV2(e.mouseX, e.mouseY);
-			_mouseButtonIndex = e.mouseButton;
-			_isMouseDown = true;
+			mousePosition = new FV2(e.mouseX, e.mouseY);
+			mouseButtonIndex = e.mouseButton;
+			isMouseDown = true;
 		}
 		else if (e.type == EVENT_MOUSE_DOWN)
 		{
-			_mousePosition = new FV2(e.mouseX, e.mouseY);
-			_mouseButtonIndex = e.mouseButton;
-			_isMouseDown = false;
-			_hasMouseReleased = true;			
+			mousePosition = new FV2(e.mouseX, e.mouseY);
+			mouseButtonIndex = e.mouseButton;
+			isMouseDown = false;
+			hasMouseReleased = true;			
 		}
 		else if (e.type == EVENT_MOUSE_WHEEL)
 		{
-			_isMouseScrolling = true;
-			_scrollDirection = e.mouseDelta;
+			isMouseScrolling = true;
+			scrollDirection = e.mouseDelta;
 		}
 		else if (e.type == EVENT_KEY_DOWN)
 		{
 			if (e.key == CHAR)
 			{
-				_keysDown[e.char.charCodeAt(0)] = true;
+				keysDown[e.char.charCodeAt(0)] = true;
 			}
 		}
 		else if (e.type == EVENT_KEY_UP)
 		{
 			if (e.key == CHAR)
 			{
-				_keysDown[e.char.charCodeAt(0)] = false;
-				_keysUp[e.char.charCodeAt(0)] = true;
+				keysDown[e.char.charCodeAt(0)] = false;
+				keysUp[e.char.charCodeAt(0)] = true;
 			}
 		}
 	}
@@ -237,6 +262,7 @@ class Game
 	{
 		g2 = buffer.g2;
 		_inited = true;
+		_currentPos = new FV2(0, 0);
 	}
 
 	/**
@@ -244,11 +270,13 @@ class Game
 	*/
 	public function end()
 	{
-		_keysDown = [ for(i in 0...255) false ];
-		_keysUp = [ for(i in 0...255) false ];
-		_isMouseDown = false;
-		_hasMouseReleased = false;
-		_isMouseScrolling = false;
+		_currentPos = _lastPos = new FV2(0, 0);
+		keysDown = [ for(i in 0...255) false ];
+		keysUp = [ for(i in 0...255) false ];
+		isMouseDown = false;
+		hasMouseReleased = false;
+		isMouseScrolling = false;
+		mouseButtonIndex = -1;
 	}
 
 	/**
@@ -453,7 +481,21 @@ class Game
 			_dir = dir;
 	}
 
+	/**
+	* Gets the position from the previously drawn element, based on the current flow.
+	* Note that if the direction of the flow is 'up' or 'right', that the result is the same.
+	*
+	* @return Returns the last position.
+	*/
+	public function getLastPosition():FV2 return _lastPos;
 
+	/**
+	* Gets the current position, which is the expected location, based on flow, for the next
+	* drawn element unless specified in a given draw call.
+	*
+	* @return Returns the last position.
+	*/
+	public function getCurrentPosition():FV2 return _currentPos;
 
 	/**
 	* Draws a bitmap image at the given location, with an optional size and scale9 value.
@@ -608,8 +650,6 @@ class Game
 	*/
 	public function label(text:String, ?font:Font = null, ?fontSize:Int = 12, ?pos:FV2 = null, ?size:FV2 = null, ?fontColor:UInt = 0xFFFFFFFF, ?shadow:Bool = false, ?shadowX:Int = 1, ?shadowY:Int = 1, ?shadowColor:UInt = 0xFF000000)
 	{
-		_currentPos = resolvePosition(pos, size);
-
 		if (font == null && _regularFont == null)
 			return;
 		else if (font == null)
@@ -619,11 +659,18 @@ class Game
 		}
 		else
 			g2.font = font;
+		
+		var fontHeight = g2.font.height(fontSize);
+		var width = g2.font.width(fontSize, text);
+
+		if (size == null)
+			size = new FV2(width, fontHeight);
+
+		_currentPos = resolvePosition(pos, size);
 
 		var lineIndex:Int = 0;
 		
 		g2.fontSize = fontSize;
-		var fontHeight = font.height(fontSize);
 		
 		if (shadow)
 		{
@@ -661,22 +708,30 @@ class Game
 	* @param shadowColor The color of the shadow label. Default is `0xFF000000` (Black).
 	* @param lineSpacing The spacing between lines by pixel value.
 	*/
-	public function multilineLabel(text:String, font:Font, fontSize:Int, pos:FV2 = null, size:FV2 = null, fontColor:UInt = 0xFFFFFFFF, maxWidth:Float = 150, shadow:Bool = false, shadowX:Int = 1, shadowY:Int = 1, shadowColor:UInt = 0xFF000000, lineSpacing:Int = 1)
+	public function multilineLabel(text:String, font:Font = null, fontSize:Int = 12, pos:FV2 = null, size:FV2 = null, fontColor:UInt = 0xFFFFFFFF, maxWidth:Float = 150, shadow:Bool = false, shadowX:Int = 1, shadowY:Int = 1, shadowColor:UInt = 0xFF000000, lineSpacing:Int = 1)
 	{
-		_currentPos = resolvePosition(pos, size);
-
 		if (font == null && _regularFont == null)
 			return;
 		else if (font == null)
 		{
-			font = _regularFont;
+			g2.font = _regularFont;
 			fontSize = _regularFontSize;	
 		}
+		else
+			g2.font = font;
+		
+		var fontHeight = g2.font.height(fontSize);
+		var width = g2.font.width(fontSize, text);
+
+		if (size == null)
+			size = new FV2(width, fontHeight);
+
+		_currentPos = resolvePosition(pos, size);
 
 		var maxWidth:Float = size.x;
 		_lines = [];
 		if (maxWidth > -1)
-			processLines(text, font, fontSize, maxWidth);
+			processLines(text, g2.font, fontSize, maxWidth);
 		else
 		{
 			var _text = text;
@@ -685,22 +740,19 @@ class Game
 			_lines.push(_text);
 		}
 		
-		var heightLimit = _lines.length * font.height(fontSize) + lineSpacing;
+		var heightLimit = _lines.length * g2.font.height(fontSize) + lineSpacing;
 		if (size.y > heightLimit)
 			size.y = heightLimit;
 
-		var maxLinesInLabel = Math.floor(size.y / font.height(fontSize));
+		var maxLinesInLabel = Math.floor(size.y / g2.font.height(fontSize));
 
 		var lineIndex:Int = 0;
 		
-		g2.font = font;
-		g2.fontSize = fontSize;
-		var fontHeight = font.height(fontSize);
+		var fontHeight = g2.font.height(fontSize);
 		
 		if (shadow)
 		{
 			g2.color = shadowColor;
-			g2.font = font;
 			g2.fontSize = fontSize;
 
 			for (i in 0...maxLinesInLabel)
@@ -715,13 +767,6 @@ class Game
 				else
 					break;
 			}
-
-			// if (shadowBlurAmount > 0)
-			// {
-			// 	BitmapFilter.blur(bitmapFilter, shadowBlurAmount);
-			// }
-
-			//g2.drawImage(bitmapFilter, , );
 		}
 
 		for (i in 0...maxLinesInLabel)
@@ -809,6 +854,9 @@ class Game
 
 			if (currentLine != "")
 				_lines.push(currentLine);
+			
+			currentLine = "";
+			currentWord = "";
 		}
 
 		
@@ -835,7 +883,7 @@ class Game
 			g2.font = _regularFont;
 			g2.color = RealColors.yellow;
 			g2.fontSize = 16;
-			var fps = Std.int(_frames / deltaTime);
+			var fps = Std.int(_frames / (deltaTime * 1000));
 			g2.drawString("" + fps, 2, 2);
 		}
 		
@@ -851,13 +899,13 @@ class Game
 			if (_currentPos != null && _lastPos != null)
 			{
 				if (_dir == 'left')
-					result = new FV2(_lastPos.x + _padding, _lastPos.y - (size.y / 2));
+					result = new FV2(_lastPos.x + _padding, _lastPos.y);
 				else if (_dir == 'down')
-					result = new FV2(_lastPos.x - (size.x / 2), _lastPos.y + _padding);
+					result = new FV2(_lastPos.x, _lastPos.y + _padding);
 				else if (_dir == 'up')
-					result = new FV2(_lastPos.x - (size.x / 2), _lastPos.y - _padding - size.y);
+					result = new FV2(_lastPos.x, _lastPos.y - _padding - size.y);
 				else if (_dir == 'right')
-					result = new FV2(_lastPos.x - _padding - size.x, _lastPos.y - (size.y / 2));
+					result = new FV2(_lastPos.x - _padding - size.x, _lastPos.y);
 			}
 			else if (_currentPos != null && _lastPos == null)
 			{
@@ -876,13 +924,13 @@ class Game
 	private function changeLastPosition(pos:FV2, size:FV2)
 	{
 		if (_dir == 'left')
-			_lastPos = new FV2(pos.x + size.x, (size.y / 2) + pos.y);
+			_lastPos = new FV2(pos.x + size.x, pos.y);
 		else if (_dir == 'down')
-			_lastPos = new FV2((size.x / 2) + pos.x, pos.y + size.y);
+			_lastPos = new FV2(pos.x, pos.y + size.y);
 		else if (_dir == 'up')
-			_lastPos = new FV2((size.x / 2) + pos.x, pos.y);
+			_lastPos = new FV2(pos.x, pos.y);
 		else if (_dir == 'right')
-			_lastPos = new FV2(pos.x, (size.y / 2) + pos.y);
+			_lastPos = new FV2(pos.x, pos.y);
 	}
 
 	/**
