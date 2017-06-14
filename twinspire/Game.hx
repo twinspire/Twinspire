@@ -54,7 +54,6 @@ class Game
 {
 
 	private var g2:Graphics2;
-	private var _lastTime:Float;
 	private var _events:Array<Event>;
 	private var _error:String;
 
@@ -82,9 +81,7 @@ class Game
 
 	public function new()
 	{
-		_lastTime = 0;
 		initEvents();
-
 	}
 
 	// Event Handling routines
