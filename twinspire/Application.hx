@@ -7,13 +7,6 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-
-LEGEND:
-
- - Event Handling routines (public utility functions)
- - Initialisation routines
- - Event handling functions (private internal functions)
-
 */
 
 package twinspire;
@@ -43,14 +36,11 @@ using twinspire.events.EventType;
 using StringTools;
 
 /**
-* The `Game` class is the basis for drawing routines, handling events, and rendering levels within Twinspire.
-*
-* It contains all of the utility functions you need to draw and manipulate objects within your game, which includes
-* controlling the flow of UI components, adjusting zoom factors, among other utilities.
-*
-* To use, simply call `Game.create` with the appropriate parameters to initialise a game.
+* The `Application` class handles primarily event handling in a coherent manner.
+* 
+* No rendering is done in the Application class.
 */
-class Game
+class Application
 {
 
 	private var g2:Graphics2;
@@ -68,13 +58,13 @@ class Game
 	* @param options The system options used to declare title and size of the game client.
 	* @param callback The function handler that is called when all assets have been loaded.
 	*/
-	public static function create(options:SystemOptions, callback:Game -> Void)
+	public static function create(options:SystemOptions, callback:Application -> Void)
 	{
 		System.init(options, function()
 		{
 			Assets.loadEverything(function()
 			{
-				callback(new Game());
+				callback(new Application());
 			});
 		});
 	}
