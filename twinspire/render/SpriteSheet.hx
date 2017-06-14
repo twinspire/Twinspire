@@ -8,32 +8,32 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-package twinspire.render.effects;
+package twinspire.render;
 
-class ConversionMatrix
+import twinspire.geom.Rect;
+
+import kha.Image;
+
+/**
+* The `SpriteSheet` class provides an easy, compact, collection of images mapped to certain specified rectangles.
+*/
+class SpriteSheet
 {
 
-	public var topLeft:Int = 0;
-	public var topMid:Int = 0;
-	public var topRight:Int = 0;
-	public var midLeft:Int = 0;
-	public var pixel:Int = 1;
-	public var midRight:Int = 0;
-	public var bottomLeft:Int = 0;
-	public var bottomMid:Int = 0;
-	public var bottomRight:Int = 0;
-	public var factor:Int = 1;
-	public var offset:Int = 0;
+	/**
+	* The image to use for this sprite sheet.
+	*/
+	public var image:Image;
 
-	public function new()
+	/**
+	* A Map containing an array of rectangles associated with a given key.
+	* This provides the ability to animate using the array as a sequence.
+	*/
+	public var map:Map<String, Array<Rect>>;
+
+	public function new(image:Image)
 	{
-
-	}
-
-	public function setAll(val:Int)
-	{
-		topLeft = topMid = topRight = midLeft = pixel = midRight = bottomLeft
-			= bottomMid = bottomRight = val;
+		this.image = image;
 	}
 
 }

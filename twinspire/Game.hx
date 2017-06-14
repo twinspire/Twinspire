@@ -12,24 +12,13 @@ LEGEND:
 
  - Event Handling routines (public utility functions)
  - Initialisation routines
- - Basic drawing routines
  - Event handling functions (private internal functions)
 
 */
 
 package twinspire;
 
-import twinspire.render.tilemap.tiled.TileMapLayer in TiledLayer;
-import twinspire.render.tilemap.tiled.TileMap in TiledMap;
-import twinspire.render.tilemap.tiled.Tileset in TiledSet;
-import twinspire.render.tilemap.ts.TileMap in TsTileMap;
-import twinspire.render.tilemap.ts.Tileset in TsTileset;
-
 import twinspire.events.Event;
-import twinspire.render.TileMap;
-import twinspire.render.Tileset;
-import twinspire.render.Tile;
-import twinspire.geom.Rect;
 
 import kha.math.FastVector2 in FV2;
 import kha.math.FastVector3 in FV3;
@@ -42,7 +31,6 @@ import kha.input.Keyboard;
 import kha.input.Mouse;
 import kha.input.Surface;
 import kha.Font;
-import kha.Key;
 import kha.System;
 import kha.Assets;
 import kha.Framebuffer;
@@ -66,69 +54,14 @@ class Game
 {
 
 	private var g2:Graphics2;
-	private var _frames:UInt;
 	private var _lastTime:Float;
 	private var _events:Array<Event>;
 	private var _error:String;
-	private var _regularFont:Font;
-	private var _headingFont:Font;
-	private var _regularFontSize:Int;
-	private var _headingFontSize:Int;
-
-	/**
-	* Gets the mouse position within the game client.
-	*/
-	public static var mousePosition:FV2;
-	/**
-	* Gets the index of the button that was most recently pressed.
-	*/
-	public static var mouseButtonIndex:Int;
-	/**
-	* Gets a value specifying if a mouse button is held down.
-	*/
-	public static var isMouseDown:Bool;
-	/**
-	* Gets a value specifying is a mouse button has been released.
-	*/
-	public static var hasMouseReleased:Bool;
-	/**
-	* Gets a value specifying if the mouse wheel has moved.
-	*/
-	public static var isMouseScrolling:Bool;
-	/**
-	* Gets a value specifying the direction the mouse wheel moved.
-	*/
-	public static var scrollDirection:Int;
-	/**
-	* Gets an array of boolean values determining which keys, by key code, are pressed down.
-	*/
-	public static var keysDown:Array<Bool>;
-	/**
-	* Gets an array of boolean values determining which keys, by key code, have been released.
-	*/
-	public static var keysUp:Array<Bool>;
-
-	private var _padding:Int;
-	private var _dir:String = 'down';
-
-	private var _lastPos:FV2;
-	private var _currentPos:FV2;
-
-	private var _inited:Bool;
-	private var _lines:Array<String>;
-	private var _tileMap:TileMap;
-	private var _showTileMap:Bool;
 
 	/**
 	* Gets the currently polled event.
 	*/
 	public var currentEvent:Event;
-
-	/**
-	* Show frames per second in the top-left corner of the game window.
-	* Requires initialisation of fonts to use (`initFonts`).
-	*/
-	public var showFramesPerSecond:Bool;
 
 	/**
 	* Create a `Game`, initialise the system and load all available assets.
@@ -149,13 +82,9 @@ class Game
 
 	public function new()
 	{
-		_frames = 0;
 		_lastTime = 0;
 		initEvents();
 
-		mousePosition = new FV2(0, 0);
-		keysDown = [ for(i in 0...255) false ];
-		keysUp = [ for(i in 0...255) false ];
 	}
 
 	// Event Handling routines
@@ -165,7 +94,7 @@ class Game
 		_events = [];
 
 		if (Keyboard.get(0) != null)
-			Keyboard.get(0).notify(_keyboard_onKeyDown, _keyboard_onKeyUp);
+			Keyboard.get(0).notify(_keyboard_onKeyDown, _keyboard_onKeyUp, _keyboard_onKeyPress);
 		
 		if (Mouse.get(0) != null)
 			Mouse.get(0).notify(_mouse_onMouseDown, _mouse_onMouseUp, _mouse_onMouseMove, _mouse_onMouseWheel);
@@ -206,51 +135,6 @@ class Game
 		return true;
 	}
 
-	/**
-	* Handle events within this game instance. You may need to call this
-	* if you want gui calls to be handled properly, unless you wish to handle
-	* it yourself.
-	*/
-	public function handleEvent():Void
-	{
-		var e = currentEvent;
-		if (e.type == EVENT_MOUSE_MOVE)
-			mousePosition = new FV2(e.mouseX, e.mouseY);
-		else if (e.type == EVENT_MOUSE_UP)
-		{
-			mousePosition = new FV2(e.mouseX, e.mouseY);
-			mouseButtonIndex = e.mouseButton;
-			isMouseDown = true;
-		}
-		else if (e.type == EVENT_MOUSE_DOWN)
-		{
-			mousePosition = new FV2(e.mouseX, e.mouseY);
-			mouseButtonIndex = e.mouseButton;
-			isMouseDown = false;
-			hasMouseReleased = true;			
-		}
-		else if (e.type == EVENT_MOUSE_WHEEL)
-		{
-			isMouseScrolling = true;
-			scrollDirection = e.mouseDelta;
-		}
-		else if (e.type == EVENT_KEY_DOWN)
-		{
-			if (e.key == CHAR)
-			{
-				keysDown[e.char.charCodeAt(0)] = true;
-			}
-		}
-		else if (e.type == EVENT_KEY_UP)
-		{
-			if (e.key == CHAR)
-			{
-				keysDown[e.char.charCodeAt(0)] = false;
-				keysUp[e.char.charCodeAt(0)] = true;
-			}
-		}
-	}
-
 	// Initialisation routines.
 
 	/**
@@ -261,8 +145,6 @@ class Game
 	public function begin(buffer:Framebuffer)
 	{
 		g2 = buffer.g2;
-		_inited = true;
-		_currentPos = new FV2(0, 0);
 	}
 
 	/**
@@ -270,13 +152,7 @@ class Game
 	*/
 	public function end()
 	{
-		_currentPos = _lastPos = new FV2(0, 0);
-		keysDown = [ for(i in 0...255) false ];
-		keysUp = [ for(i in 0...255) false ];
-		isMouseDown = false;
-		hasMouseReleased = false;
-		isMouseScrolling = false;
-		mouseButtonIndex = -1;
+		
 	}
 
 	/**
@@ -286,671 +162,31 @@ class Game
 	*/
 	public function error() return _error;
 
-	/**
-	* Initialise basic fonts that this game instance will use for drawing GUI components.
-	*
-	* @param regularFont A font used for regular use.
-	* @param regularFontSize The font size used for the regular font.
-	* @param headingFont A font used for headings.
-	* @param headingFontSize The font size used for headings.
-	*/
-	public function initFonts(regularFont:Font, regularFontSize:Int, headingFont:Font, headingFontSize:Int)
-	{
-		_regularFont = regularFont;
-		_headingFont = headingFont;
-		_regularFontSize = regularFontSize;
-		_headingFontSize = headingFontSize;
-	}
-
-	/**
-	* Initialise the TileMap. Assumes that you wish the TileMap to be rendered to the game screen.
-	*
-	* @param width The number of tiles that represent the width of the map.
-	* @param height The number of tiles that represent the height of the map.
-	* @param tilewidth The width of each tile within the TileMap.
-	* @param tileheight The height of each tile within the TileMap.
-	*/
-	public function initTileMap(width:Int, height:Int, tilewidth:Int, tileheight:Int):Void
-	{
-		_tileMap = new TileMap(width, height, tilewidth, tileheight);
-		_showTileMap = true;
-	}
-
-	/**
-	* Initialise a TileMap from the Twinspire JSON file format.
-	*
-	* @param file The Blob Asset that is a file containing JSON data for a TileMap.
-	*
-	* @return Returns `true` if the TileMap was successfully created, `false` otherwise.
-	*/
-	public function initTileMapFromJson(file:Blob):Bool
-	{
-		_tileMap = createTileMapFromJson(file);
-		if (_tileMap == null)
-			return false;
-
-		_showTileMap = true;
-		return true;
-	}
-
-	/**
-	* Create a TileMap from a JSON file without setting it internally.
-	*
-	* @param file The Blob Asset that is a file containing JSON data for a TileMap.
-	*
-	* @return Returns the created TileMap, if successful, otherwise null.
-	*/
-	public function createTileMapFromJson(file:Blob):TileMap
-	{
-		var contents = file.toString();
-		var data:TsTileMap = Json.parse(contents);
-
-		var map = new TileMap(data.tileCountX, data.tileCountY, data.tilewidth, data.tileheight);
-		for (i in 0...data.tilesets.length)
-		{
-			var set:TsTileset = data.tilesets[i];
-			var csvName = data.layersFromPaths[i];
-			var blob:Blob = Reflect.field(Assets.blobs, csvName);
-			if (blob == null)
-			{
-				throw "Tried to load a blob with the name " + csvName + ".";
-				return null;
-			}
-
-			var img:Image = Reflect.field(Assets.images, set.assetName);
-			if (img == null)
-			{
-				throw "Tried to load an image with the name " + set.assetName + ".";
-				return null;
-			}
-
-			var tileset = new Tileset(img, set.tilewidth, set.tileheight);
-			if (set.canPassThrough != null)
-				tileset.canPassThrough = set.canPassThrough;
-			if (set.canPassUp != null)
-				tileset.canPassUp = set.canPassUp;
-			if (set.canPassDown != null)
-				tileset.canPassDown = set.canPassDown;
-			if (set.canPassLeft != null)
-				tileset.canPassLeft = set.canPassLeft;
-			if (set.canPassRight != null)
-				tileset.canPassRight = set.canPassRight;
-
-			if (!addTileMapLayerFromCSV(map, blob, tileset))
-			{
-				throw "Loading a TileMap with the resources: " + csvName + " & " + set.assetName + " did not appear to work.";
-				return null;
-			}
-		}
-
-		return map;
-	}
-
-	/**
-	* Add a tile layer from a CSV file with its respective Tileset.
-	*
-	* @param map The TileMap you want to add a layer to.
-	* @param file The Blob file containing the CSV data you want to add.
-	* @param set The `Tileset` used with the `file` to add a layer to the given map.
-	*
-	* @return Returns `true` if successful, `false` otherwise.
-	*/
-	public function addTileMapLayerFromCSV(map:TileMap, file:Blob, set:Tileset):Bool
-	{
-		try
-		{
-			var contents = file.toString();
-			var lines = contents.split('\n');
-			var tiles = new Array<Tile>();
-			var x = 0;
-			var y = 0;
-			for (line in lines)
-			{
-				if (line == "")
-					break;
-				x = 0;
-				
-				for (id in line.split(','))
-				{
-					var value:Int = Std.parseInt(id);
-					tiles.push(new Tile(value, new FV2(set.tilewidth * x, set.tileheight * y)));
-					x++;
-				}
-				y++;
-			}
-
-			map.addLayer(tiles, set);
-
-			return true;
-		}
-		catch (msg:String)
-		{
-			_error = msg;
-			return false;
-		}
-	}
-
-	/**
-	* A work-in-progress. Do not use.
-	* Initialise a map from the Tiled Json format.
-	*
-	* @param `file` The Blob Asset that is a file containing JSON data from the Tiled file format.
-	*
-	* @return Returns `true` if a tilemap was successfully created, `false` otherwise.
-	*/
-	public function initMapFromTiledJSON(file:Blob):Bool
-	{
-		try
-		{
-			var contents = file.toString();
-			var data:TiledMap = Json.parse(contents);
-
-			_tileMap = new TileMap(data.width, data.height, data.tilewidth, data.tileheight);
-
-			// TODO
-
-			return true;
-		}
-		catch (msg:String)
-		{
-			_error = msg;
-			return false;
-		}
-	}
-
-	/**
-	* Gets the currently rendered TileMap.
-	*/
-	public function getCurrentTileMap() return _tileMap;
-
-	// Basic drawing routines
-
-	/**
-	* Changes the direction of the flow. Acceptable values are: 'left', 'right', 'up', 'down'
-	* Flow automatically determines where the next drawn object should be placed, unless specified.
-	* When position is specified in a drawn object, flow continues from that position.
-	*
-	* @param dir The string value used to direct the flow of UI components. If it is not a valid value,
-	*    the direction defaults back to 'down'.
-	*/
-	public function changeDirection(dir:String)
-	{
-		if (dir != 'left' || dir != 'right' || dir != 'up' || dir != 'down')
-			dir = 'down';
-		else
-			_dir = dir;
-	}
-
-	/**
-	* Gets the position from the previously drawn element, based on the current flow.
-	* Note that if the direction of the flow is 'up' or 'right', that the result is the same.
-	*
-	* @return Returns the last position.
-	*/
-	public function getLastPosition():FV2 return _lastPos;
-
-	/**
-	* Gets the current position, which is the expected location, based on flow, for the next
-	* drawn element unless specified in a given draw call.
-	*
-	* @return Returns the last position.
-	*/
-	public function getCurrentPosition():FV2 return _currentPos;
-
-	/**
-	* Draws a bitmap image at the given location, with an optional size and scale9 value.
-	* If size is not given, the bitmap will be drawn at its original size.
-	* If scale9Grid is given, the bitmap will be drawn scaled within those bounds.
-	*
-	* @param src The Image Assets you want to draw.
-	* @param pos The `FastVector2` value to use to specify the position. If null, it will determine position
-	*    based on the last position of the last drawn object.
-	* @param size The `FastVector2` value to use to specify the size. If null, it will use the original image width and height.
-	* @param scale9Grid A `Rect` value to specify the bounds of the inner portion of the image to stretch when scaling.
-	*/
-	public function bitmap(src:Image, pos:FV2 = null, size:FV2 = null, scale9Grid:Rect = null)
-	{
-		var imageWidth = size != null ? size.x : src.realWidth;
-		var imageHeight = size != null ? size.y : src.realHeight;
-
-		_currentPos = resolvePosition(pos, new FV2(imageWidth, imageHeight));
-
-		if (size != null && scale9Grid == null)
-		{
-			g2.drawScaledImage(src, _currentPos.x, _currentPos.y, size.x, size.y);
-			changeLastPosition(_currentPos, size);
-		}
-		else if (size != null && scale9Grid != null)
-		{
-			var rect = scale9Grid;
-			//don't draw if the scale9grid has a size less than the actual image
-			if (src.realWidth < rect.x + rect.width || src.realWidth < rect.y + rect.height)
-			{
-				g2.drawScaledImage(src, _currentPos.x, _currentPos.y, src.realWidth, src.realHeight);
-				changeLastPosition(_currentPos, new FV2(imageWidth, imageHeight));
-				return;
-			}
-			
-			var clipRightX = rect.x + rect.width;
-			var leftW = rect.x;
-			var rightW = src.realWidth - clipRightX;
-			var centerW = size.x - (leftW + rightW);
-			var clipRightW = rightW;
-			var clipBottomY = rect.y + rect.height;
-			var topH = rect.y;
-			var bottomH = src.realHeight - clipBottomY;
-			var centerH = size.y - (topH + bottomH);
-			var clipBottomH = bottomH;
-
-			if (centerW < 0)
-			{
-				centerW = 0;
-				if (leftW == 0)
-					rightW = rect.width;
-				else if (rightW == 0)
-					leftW = rect.width;
-				else
-				{
-					var ratio = leftW / rightW;
-					rightW = Math.ceil(rect.width / (ratio + 1));
-					leftW = rect.width - rightW;
-				}
-			}
-
-			if (centerH < 0)
-			{
-				centerH = 0;
-				if (topH == 0)
-					bottomH = rect.height;
-				else if (bottomH == 0)
-					topH = rect.height;
-				else
-				{
-					var ratio = topH / bottomH;
-					bottomH = Math.ceil(rect.height / (ratio + 1));
-					topH = rect.height - bottomH;
-				}
-			}
-
-			var centerX = _currentPos.x + leftW;
-			var centerY = _currentPos.y + topH;
-			var rightX = _currentPos.x + leftW + centerW;
-			var bottomY = _currentPos.y + topH + centerH;
-
-			if (leftW > 0)
-			{
-				if (topH > 0)
-					g2.drawScaledSubImage(src, 
-							0, 0, rect.y, rect.y, 
-							_currentPos.x, _currentPos.y, leftW, topH);
-				if (centerH > 0)
-					g2.drawScaledSubImage(src,
-							0, rect.y, rect.x, rect.height,
-							_currentPos.x, centerY, leftW, centerH);
-				if (bottomH > 0)
-					g2.drawScaledSubImage(src,
-							0, clipBottomY, rect.x, clipBottomH,
-							_currentPos.x, bottomY, leftW, bottomH);
-			}
-
-			if (centerW > 0)
-			{
-				if (topH > 0)
-					g2.drawScaledSubImage(src,
-							rect.x, 0, rect.width, rect.y,
-							centerX, _currentPos.y, centerW, topH);
-				if (centerH > 0)
-					g2.drawScaledSubImage(src,
-							rect.x, rect.y, rect.width, rect.height,
-							centerX, centerY, centerW, centerH);
-				if (bottomH > 0)
-					g2.drawScaledSubImage(src,
-							rect.x, clipBottomY, rect.width, clipBottomH,
-							centerX, bottomY, centerW, bottomH);
-			}
-
-			if (rightW > 0)
-			{
-				if (topH > 0)
-					g2.drawScaledSubImage(src,
-							clipRightX, 0, clipRightW, rect.y,
-							rightX, _currentPos.y, rightW, topH);
-				if (centerH > 0)
-					g2.drawScaledSubImage(src,
-							clipRightX, rect.y, clipRightW, rect.height,
-							rightX, centerY, rightW, centerH);
-				if (bottomH > 0)
-					g2.drawScaledSubImage(src,
-							clipRightX, clipBottomY, clipRightW, clipBottomH,
-							rightX, bottomY, rightW, bottomH);
-			}
-
-			changeLastPosition(_currentPos, size);
-		}
-		else
-		{
-			g2.drawScaledImage(src, _currentPos.x, _currentPos.y, src.realWidth, src.realHeight);
-			changeLastPosition(_currentPos, new FV2(imageWidth, imageHeight));
-		}
-	}
-
-	/**
-	* Draw a label with the given font, size and colour.
-	*
-	* @param text The text to display.
-	* @param font The font to use. If null, it will fallback to `regularFont`. If neither is available, the label will not draw.
-	* @param fontSize The size of the font to use. 12 is the default value. If `regularFont` is used, it will use that respective size instead.
-	* @param pos The position of the label. If null, it will determine the position based on the last drawn object.
-	* @param size The size of the label. This does not affect the label itself, but will affect the flow of the scene.
-	* @param fontColor The color of the label. Default value is `0xFFFFFFFF` (White).
-	* @param shadow A `Bool` value determining if a shadow should be cast. It simply draws another label with the same text underneath.
-	* @param shadowX The `x` position of the shadow label, relative to the position of the actual label.
-	* @param shadowY The `y` position of the shadow label, relative to the position of the actual label.
-	* @param shadowColor The color of the shadow label. Default is `0xFF000000` (Black).
-	*/
-	public function label(text:String, ?font:Font = null, ?fontSize:Int = 12, ?pos:FV2 = null, ?size:FV2 = null, ?fontColor:UInt = 0xFFFFFFFF, ?shadow:Bool = false, ?shadowX:Int = 1, ?shadowY:Int = 1, ?shadowColor:UInt = 0xFF000000)
-	{
-		if (font == null && _regularFont == null)
-			return;
-		else if (font == null)
-		{
-			g2.font = _regularFont;
-			fontSize = _regularFontSize;	
-		}
-		else
-			g2.font = font;
-		
-		var fontHeight = g2.font.height(fontSize);
-		var width = g2.font.width(fontSize, text);
-
-		if (size == null)
-			size = new FV2(width, fontHeight);
-
-		_currentPos = resolvePosition(pos, size);
-
-		var lineIndex:Int = 0;
-		
-		g2.fontSize = fontSize;
-		
-		if (shadow)
-		{
-			g2.color = shadowColor;
-			g2.font = font;
-			g2.fontSize = fontSize;
-			g2.drawString(text, _currentPos.x + shadowX, _currentPos.y + shadowY);
-
-			// if (shadowBlurAmount > 0)
-			// {
-			// 	BitmapFilter.blur(bitmapFilter, shadowBlurAmount);
-			// }
-
-			//g2.drawImage(bitmapFilter, , );
-		}
-
-		g2.color = fontColor;
-		g2.drawString(text, _currentPos.x, _currentPos.y);
-
-		changeLastPosition(_currentPos, size);
-	}
-
-	/**
-	* Draw a multiline label with the given font, size and colour.
-	*
-	* @param text The text to display.
-	* @param font The font to use. If null, it will fallback to `regularFont`. If neither is available, the label will not draw.
-	* @param fontSize The size of the font to use. 12 is the default value. If `regularFont` is used, it will use that respective size instead.
-	* @param pos The position of the label. If null, it will determine the position based on the last drawn object.
-	* @param size The size of the label. This does not affect the label itself, but will affect the flow of the scene.
-	* @param fontColor The color of the label. Default value is `0xFFFFFFFF` (White).
-	* @param shadow A `Bool` value determining if a shadow should be cast. It simply draws another label with the same text underneath.
-	* @param shadowX The `x` position of the shadow label, relative to the position of the actual label.
-	* @param shadowY The `y` position of the shadow label, relative to the position of the actual label.
-	* @param shadowColor The color of the shadow label. Default is `0xFF000000` (Black).
-	* @param lineSpacing The spacing between lines by pixel value.
-	*/
-	public function multilineLabel(text:String, font:Font = null, fontSize:Int = 12, pos:FV2 = null, size:FV2 = null, fontColor:UInt = 0xFFFFFFFF, maxWidth:Float = 150, shadow:Bool = false, shadowX:Int = 1, shadowY:Int = 1, shadowColor:UInt = 0xFF000000, lineSpacing:Int = 1)
-	{
-		if (font == null && _regularFont == null)
-			return;
-		else if (font == null)
-		{
-			g2.font = _regularFont;
-			fontSize = _regularFontSize;	
-		}
-		else
-			g2.font = font;
-		
-		var fontHeight = g2.font.height(fontSize);
-		var width = g2.font.width(fontSize, text);
-
-		if (size == null)
-			size = new FV2(width, fontHeight);
-
-		_currentPos = resolvePosition(pos, size);
-
-		var maxWidth:Float = size.x;
-		_lines = [];
-		if (maxWidth > -1)
-			processLines(text, g2.font, fontSize, maxWidth);
-		else
-		{
-			var _text = text;
-			_text = text.replace("\r", "");
-			_text = text.replace("\n", "");
-			_lines.push(_text);
-		}
-		
-		var heightLimit = _lines.length * g2.font.height(fontSize) + lineSpacing;
-		if (size.y > heightLimit)
-			size.y = heightLimit;
-
-		var maxLinesInLabel = Math.floor(size.y / g2.font.height(fontSize));
-
-		var lineIndex:Int = 0;
-		
-		var fontHeight = g2.font.height(fontSize);
-		
-		if (shadow)
-		{
-			g2.color = shadowColor;
-			g2.fontSize = fontSize;
-
-			for (i in 0...maxLinesInLabel)
-			{
-				var spaceY = i * fontHeight + lineSpacing * i;
-				if (i == 0)
-					spaceY = 0;
-				if (i < _lines.length)
-				{
-					g2.drawString(_lines[i], _currentPos.x + shadowX, _currentPos.y + spaceY + shadowY);
-				}
-				else
-					break;
-			}
-		}
-
-		for (i in 0...maxLinesInLabel)
-		{
-			var spaceY = i * fontHeight + lineSpacing * i;
-			if (i == 0)
-				spaceY = 0;
-			if (i < _lines.length)
-			{
-				g2.color = fontColor;
-				g2.drawString(_lines[i], _currentPos.x, _currentPos.y + spaceY);
-			}
-			else
-				break;
-		}
-
-		changeLastPosition(_currentPos, size);
-	}
-
-	private function processLines(text:String, font:Font, fontSize:Int, maxWidth:Float)
-	{
-		var lines = text.split('\n');
-		var currentLine = "";
-		var currentWord = "";
-		for (line in lines)
-		{
-			var firstWord = false;
-			for (i in 0...line.length)
-			{
-				var char = line.charAt(i);
-				if (char == "\r")
-				{
-					if (currentWord != "")
-						currentLine += currentWord;
-
-					if (currentLine != "")
-						_lines.push(currentLine);
-					
-					currentLine = "";
-					currentWord = "";
-					_lines.push("\n");
-				}
-				else if (char == " ")
-				{
-					var currentLineWidth = font.width(fontSize, currentLine + " " + currentWord);
-					if (currentLineWidth < maxWidth)
-					{
-						currentLine += currentWord + " ";
-						currentWord = "";
-						continue;
-					}
-					else if (currentLineWidth >= maxWidth)
-					{
-						_lines.push(currentLine);
-						firstWord = true;
-						currentLine = "";
-					}
-				}
-				else
-				{
-					if (firstWord)
-					{
-						currentLine += currentWord + " ";
-						currentWord = "";
-						firstWord = false;
-					}
-
-					var currentLineWidth = font.width(fontSize, currentLine + char);
-					if (currentLineWidth < maxWidth)
-					{
-						currentWord += char;
-						continue;
-					}
-					else if (currentLineWidth >= maxWidth)
-					{
-						currentWord += char;
-						_lines.push(currentLine);
-						currentLine = "";
-					}
-				}
-			}
-
-			if (currentWord != "")
-				currentLine += currentWord;
-
-			if (currentLine != "")
-				_lines.push(currentLine);
-			
-			currentLine = "";
-			currentWord = "";
-		}
-
-		
-	}
-
-	/**
-	* Renders any present levels to the game screen.
-	*
-	* @param pos The `FastVector2` value used to determine the position of the camera.
-	* @param size The `FastVector2` value used to determine the rendering view of the camera.
-	* @param zoom A floating-point value used as a percentage to determine the size of the current scene. Default is 1.0.
-	*/
-	public function renderCurrent(pos:FV2, size:FV2, zoom:Float = 1.0)
-	{
-		var deltaTime = System.time - _lastTime;
-		if (_showTileMap)
-		{
-			_tileMap.render(g2, pos, size, zoom);
-		}
-
-
-		if (showFramesPerSecond && _regularFont != null)
-		{
-			g2.font = _regularFont;
-			g2.color = RealColors.yellow;
-			g2.fontSize = 16;
-			var fps = Std.int(_frames / (deltaTime * 1000));
-			g2.drawString("" + fps, 2, 2);
-		}
-		
-		_lastTime = System.time;
-		_frames++;
-	}
-
-	private function resolvePosition(pos:FV2, size:FV2)
-	{
-		var result = new FV2(0, 0);
-		if (pos == null)
-		{
-			if (_currentPos != null && _lastPos != null)
-			{
-				if (_dir == 'left')
-					result = new FV2(_lastPos.x + _padding, _lastPos.y);
-				else if (_dir == 'down')
-					result = new FV2(_lastPos.x, _lastPos.y + _padding);
-				else if (_dir == 'up')
-					result = new FV2(_lastPos.x, _lastPos.y - _padding - size.y);
-				else if (_dir == 'right')
-					result = new FV2(_lastPos.x - _padding - size.x, _lastPos.y);
-			}
-			else if (_currentPos != null && _lastPos == null)
-			{
-				result = new FV2(_currentPos.x, _currentPos.y);
-			}
-			else
-			{
-				result = new FV2(_padding, _padding);
-			}
-		}
-		else
-			result = pos;
-		return result;
-	}
-
-	private function changeLastPosition(pos:FV2, size:FV2)
-	{
-		if (_dir == 'left')
-			_lastPos = new FV2(pos.x + size.x, pos.y);
-		else if (_dir == 'down')
-			_lastPos = new FV2(pos.x, pos.y + size.y);
-		else if (_dir == 'up')
-			_lastPos = new FV2(pos.x, pos.y);
-		else if (_dir == 'right')
-			_lastPos = new FV2(pos.x, pos.y);
-	}
 
 	/**
 	* Event handling functions
 	*/
 
-	private function _keyboard_onKeyDown(key:Key, char:String)
+	private function _keyboard_onKeyDown(key:Int)
 	{
 		var e = new Event();
 		e.type = EVENT_KEY_DOWN;
 		e.key = key;
-		e.char = char;
 		_events.push(e);
 	}
 
-	private function _keyboard_onKeyUp(key:Key, char:String)
+	private function _keyboard_onKeyUp(key:Int)
 	{
 		var e = new Event();
 		e.type = EVENT_KEY_UP;
 		e.key = key;
+		_events.push(e);
+	}
+
+	private function _keyboard_onKeyPress(char:String)
+	{
+		var e = new Event();
+		e.type = EVENT_KEY_PRESS;
 		e.char = char;
 		_events.push(e);
 	}
