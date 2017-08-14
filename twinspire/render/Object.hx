@@ -5,6 +5,7 @@ import twinspire.events.Event;
 import twinspire.gui.Container;
 
 import kha.math.FastVector2 in FV2;
+import kha.math.FastVector4 in FV4;
 import kha.graphics2.Graphics;
 import kha.System;
 
@@ -115,6 +116,37 @@ class Object
 
 		_lastTime = System.time;
 		_mouseReleased = false;
+	}
+
+	public function align(alignment:FV2, ?against:Null<FV4> = null, ?obj:Null<Object> = null)
+	{
+		var x = 0.0;
+		var y = 0.0;
+		var width = 0.0;
+		var height = 0.0;
+
+		if (against != null)
+		{
+			x = against.x;
+			y = against.y;
+			width = against.z;
+			height = against.w;
+		}
+		else if (obj != null)
+		{
+			x = obj.position.x;
+			y = obj.position.y;
+			width = obj.size.x;
+			height = obj.size.y;
+		}
+		else
+		{
+			width = System.windowWidth();
+			height = System.windowHeight();
+		}
+
+		position.x = ((alignment.x * width) - (alignment.x * size.x)) + x;
+		position.y = ((alignment.y * height) - (alignment.y * size.y)) + y;
 	}
 
 	private function applyBasicStyle(g2:Graphics, style:Style, ?offset:FV2 = null)
