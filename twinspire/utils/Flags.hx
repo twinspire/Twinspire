@@ -1,4 +1,4 @@
-package math;
+package twinspire.utils;
 
 class Flags
 {
