@@ -58,13 +58,15 @@ class Application
 	* @param options The system options used to declare title and size of the game client.
 	* @param callback The function handler that is called when all assets have been loaded.
 	*/
-	public static function create(options:SystemOptions, callback:Application -> Void)
+	public static function create(options:SystemOptions, callback:Void -> Void)
 	{
 		System.init(options, function()
 		{
 			Assets.loadEverything(function()
 			{
-				callback(new Application());
+				instance = new Application();
+
+				callback();
 			});
 		});
 	}
@@ -326,5 +328,8 @@ class Application
 		e.touchY = y;
 		_events.push(e);
 	}
+
+
+	public static var instance:Application;
 
 }
