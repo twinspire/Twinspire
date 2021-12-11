@@ -1,3 +1,6 @@
+## NOTICE
+This project is no longer in development. For a more up-to-date project, please see [Core](https://github.com/twinspire/Core).
+
 # Twinspire
 Twinspire is a 2D video game engine using the innovative Haxe programming language, built on-top of the low-level framework Kha.
 
